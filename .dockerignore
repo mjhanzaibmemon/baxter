@@ -1,0 +1,29 @@
+# Don't send these to Docker build context
+.env
+.env.*
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Documentation
+*.md
+AZURE_*.md
+README.md
+
+# Other services (not needed in ingestor image)
+grafana/
+postgres/
+sample_data/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Test/debug scripts
+check_cols.py
+debug_emails.py
+inspect_excel.py
+manual_upload.py
+test_azure_credentials.py

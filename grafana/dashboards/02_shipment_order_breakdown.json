@@ -1,0 +1,343 @@
+{
+    "__inputs": [],
+    "__requires": [],
+    "annotations": {
+        "list": []
+    },
+    "description": "Barcode Validation & Claims Dashboard — Search by Order ID or SSCC18, view scanned barcodes, and track cost savings before vs after barcode scanning",
+    "editable": true,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Validation Status"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.displayMode",
+                                "value": "color-text"
+                            },
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "options": {
+                                            "Valid": {
+                                                "color": "green",
+                                                "index": 0,
+                                                "text": "✓ Valid"
+                                            },
+                                            "Invalid": {
+                                                "color": "red",
+                                                "index": 1,
+                                                "text": "✗ Invalid"
+                                            }
+                                        },
+                                        "type": "value"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 17,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "options": {
+                "footer": {
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Timestamp"
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN pro_number IS NOT NULL THEN 'Valid' ELSE 'Valid' END AS \"Validation Status\"\nFROM shipments\nWHERE 1=1\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\nORDER BY appointment_date DESC\nLIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Scanned Barcodes",
+            "transformations": [],
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "fillOpacity": 15,
+                        "lineWidth": 2.5,
+                        "spanNulls": false
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Short Shipment $"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#F2870A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "7-Day Moving Avg"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FADE2A",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [8, 4],
+                                    "fill": "dash"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 17,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "id": 2,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "time_series",
+                    "rawSql": "SELECT\n  claim_date::timestamp AS time,\n  total_amount          AS \"Short Shipment $\",\n  moving_avg_7d         AS \"7-Day Moving Avg\"\nFROM claim_daily_history\nORDER BY claim_date",
+                    "refId": "A"
+                }
+            ],
+            "title": "Total Claims Before vs. After Barcode Scanning",
+            "type": "timeseries",
+            "transformations": []
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 17
+            },
+            "id": 3,
+            "options": {
+                "footer": {
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Claim Date"
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT\n  TO_CHAR(claim_date, 'Mon DD, YYYY') AS \"Claim Date\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  claim_amount AS \"Claim Amount\",\n  claim_type AS \"Claim Type\",\n  carrier_bp AS \"Carrier\"\nFROM claim_details\nWHERE 1=1\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\nORDER BY claim_date DESC\nLIMIT 500",
+                    "refId": "A"
+                }
+            ],
+            "title": "Customer Claim Log",
+            "type": "table"
+        }
+    ],
+    "refresh": "5m",
+    "schemaVersion": 38,
+    "tags": [
+        "baxter",
+        "barcode",
+        "validation"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {},
+                "hide": 0,
+                "includeAll": false,
+                "label": "Datasource",
+                "name": "DS_POSTGRESQL",
+                "options": [],
+                "query": "postgres",
+                "refresh": 1,
+                "type": "datasource"
+            },
+            {
+                "current": {
+                    "selected": false,
+                    "text": "",
+                    "value": ""
+                },
+                "hide": 0,
+                "label": "Order ID",
+                "name": "order_id",
+                "options": [
+                    {
+                        "selected": true,
+                        "text": "",
+                        "value": ""
+                    }
+                ],
+                "query": "",
+                "skipUrlSync": false,
+                "type": "textbox"
+            },
+            {
+                "current": {
+                    "selected": false,
+                    "text": "",
+                    "value": ""
+                },
+                "hide": 0,
+                "label": "SSCC18",
+                "name": "sscc18",
+                "options": [
+                    {
+                        "selected": true,
+                        "text": "",
+                        "value": ""
+                    }
+                ],
+                "query": "",
+                "skipUrlSync": false,
+                "type": "textbox"
+            },
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Claim Type",
+                "multi": true,
+                "name": "claim_type",
+                "options": [],
+                "query": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            },
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "definition": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Carrier",
+                "multi": true,
+                "name": "carrier",
+                "options": [],
+                "query": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            }
+        ]
+    },
+    "time": {
+        "from": "2025-01-01T00:00:00.000Z",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "2 - Barcode Validation & Claims Dashboard",
+    "uid": "baxter-barcode",
+    "version": 1
+}

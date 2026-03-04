@@ -1,0 +1,659 @@
+{
+    "__inputs": [],
+    "__requires": [],
+    "annotations": {
+        "list": []
+    },
+    "description": "Cost savings and credit recovery from carrier RMA data — before vs after barcode scanning",
+    "editable": true,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT ABS(SUM(credit)) AS value FROM rma_credits WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(credit) >= ${min_credit}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Total Credits Recovered",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "blue",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 6,
+                "y": 0
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT SUM(count) AS value FROM rma_credits WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(credit) >= ${min_credit}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Total RMA Claims",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "super-light-green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 12,
+                "y": 0
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT\n  ROUND(\n    100.0 * (before_avg - after_avg) / NULLIF(before_avg, 0)\n  , 1) AS value\nFROM (\n  SELECT\n    AVG(total_amount) FILTER (WHERE claim_date < '2025-03-01') AS before_avg,\n    AVG(total_amount) FILTER (WHERE claim_date >= '2025-03-01') AS after_avg\n  FROM claim_daily_history\n) sub",
+                    "refId": "A"
+                }
+            ],
+            "title": "Cost Reduction After Scanning",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "orange",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 18,
+                "y": 0
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT ROUND(ABS(SUM(credit)) / NULLIF(SUM(count), 0), 2) AS value FROM rma_credits WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(credit) >= ${min_credit}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Avg Credit per Claim",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "fillOpacity": 15,
+                        "lineWidth": 2.5,
+                        "spanNulls": false
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Short Shipment $"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#F2870A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "7-Day Moving Avg"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        8,
+                                        4
+                                    ],
+                                    "fill": "dash"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 24,
+                "x": 0,
+                "y": 5
+            },
+            "id": 5,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "time_series",
+                    "rawSql": "SELECT\n  claim_date::timestamp AS time,\n  total_amount          AS \"Short Shipment $\",\n  moving_avg_7d         AS \"7-Day Moving Avg\"\nFROM claim_daily_history\nORDER BY claim_date",
+                    "refId": "A"
+                }
+            ],
+            "title": "Total Claims Before vs. After Barcode Scanning",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "align": "auto"
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Claim Amount"
+                        },
+                        "properties": [
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 130
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Claim Date"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 170
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Order ID"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "SSCC18"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 210
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Claim Type"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 140
+                            },
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "type": "value",
+                                        "options": {
+                                            "Short Shipment": {
+                                                "color": "orange",
+                                                "index": 0
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "value",
+                                        "options": {
+                                            "Damaged": {
+                                                "color": "red",
+                                                "index": 1
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "value",
+                                        "options": {
+                                            "Lost Package": {
+                                                "color": "dark-red",
+                                                "index": 2
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "custom.displayMode",
+                                "value": "color-background"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 24,
+                "x": 0,
+                "y": 19
+            },
+            "id": 6,
+            "options": {
+                "footer": {
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Claim Date"
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT\n  claim_date   AS \"Claim Date\",\n  order_id     AS \"Order ID\",\n  sscc18       AS \"SSCC18\",\n  claim_amount AS \"Claim Amount\",\n  claim_type   AS \"Claim Type\",\n  carrier_bp   AS \"Carrier\"\nFROM claim_details\nWHERE $__timeFilter(claim_date)\nORDER BY claim_date DESC\nLIMIT 500",
+                    "refId": "A"
+                }
+            ],
+            "title": "Customer Claim Log",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_credit"
+                        },
+                        "properties": [
+                            {
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "custom.width",
+                                "value": 140
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "claim_count"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 33
+            },
+            "id": 7,
+            "options": {
+                "footer": {
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "total_credit"
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT\n  carrier_bp,\n  claim_type,\n  ABS(SUM(credit))                                               AS total_credit,\n  SUM(count)                                                     AS claim_count,\n  ROUND(ABS(SUM(credit)) / NULLIF(SUM(count), 0), 2)            AS avg_per_claim\nFROM rma_credits\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\n  AND ABS(credit) >= ${min_credit}\nGROUP BY carrier_bp, claim_type\nORDER BY total_credit DESC",
+                    "refId": "A"
+                }
+            ],
+            "title": "Carrier Cost Savings Breakdown",
+            "type": "table"
+        }
+    ],
+    "refresh": "5m",
+    "schemaVersion": 38,
+    "tags": [
+        "baxter",
+        "cost",
+        "savings"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {},
+                "hide": 0,
+                "includeAll": false,
+                "label": "Datasource",
+                "name": "DS_POSTGRESQL",
+                "options": [],
+                "query": "postgres",
+                "refresh": 1,
+                "type": "datasource"
+            },
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "definition": "SELECT DISTINCT claim_type FROM rma_credits ORDER BY claim_type",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Claim Type",
+                "multi": true,
+                "name": "claim_type",
+                "options": [],
+                "query": "SELECT DISTINCT claim_type FROM rma_credits ORDER BY claim_type",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            },
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "definition": "SELECT DISTINCT carrier_bp FROM rma_credits ORDER BY carrier_bp",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Carrier",
+                "multi": true,
+                "name": "carrier",
+                "options": [],
+                "query": "SELECT DISTINCT carrier_bp FROM rma_credits ORDER BY carrier_bp",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            },
+            {
+                "current": {
+                    "selected": false,
+                    "text": "0",
+                    "value": "0"
+                },
+                "hide": 0,
+                "label": "Min Credit Amount ($)",
+                "name": "min_credit",
+                "options": [
+                    {
+                        "selected": true,
+                        "text": "0",
+                        "value": "0"
+                    },
+                    {
+                        "selected": false,
+                        "text": "100",
+                        "value": "100"
+                    },
+                    {
+                        "selected": false,
+                        "text": "500",
+                        "value": "500"
+                    },
+                    {
+                        "selected": false,
+                        "text": "1000",
+                        "value": "1000"
+                    },
+                    {
+                        "selected": false,
+                        "text": "5000",
+                        "value": "5000"
+                    }
+                ],
+                "query": "0,100,500,1000,5000",
+                "skipUrlSync": false,
+                "type": "custom"
+            }
+        ]
+    },
+    "time": {
+        "from": "2025-01-01T00:00:00.000Z",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "4 - Cost Savings",
+    "uid": "baxter-cost",
+    "version": 1
+}
