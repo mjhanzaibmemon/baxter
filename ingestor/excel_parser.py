@@ -150,16 +150,15 @@ def detect_and_parse(filename: str, file_bytes: bytes):
 def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
     """
     Parse the CS_RMA_DETAIL Excel — 'Data' sheet with individual claim rows.
-    Headers are in row 5. Data starts at row 6.
+    Headers are in row 5. Data starts after header row.
     Returns list of dicts for claim_details table.
 
-    Mapping from Data sheet columns:
-      Col 9:  Effective Date                      → claim_date
-      Col 12: Original Order Number               → order_id
-      Col 7:  Shipment Number - F4211.SHPN        → sscc18
-      Col 26: Credit Issued                       → claim_amount
-      Col 28: Returned Reason (first)             → claim_type
-      Col 13: Concatenation Carrier Number - CARS → carrier_bp
+    NOTE: Different CS_RMA files have DIFFERENT column layouts:
+      - Some have 35 columns (full detail)
+      - Some have only 13 columns (compact)
+    
+    We use dynamic header matching by scanning ALL column names, not a fixed
+    dict (which breaks when duplicate header names exist like "Returned Reason").
     """
     wb = openpyxl.load_workbook(
         filename=io.BytesIO(file_bytes), read_only=True, data_only=True
@@ -171,8 +170,7 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
 
     ws = wb["Data"]
 
-    # Row 5 has headers. Find the header row dynamically as safety.
-    # read_only=True mode: use iter_rows instead of ws[row_idx]
+    # Find header row dynamically (contains "Effective Date")
     header_row_idx = None
     header_cells = None
     for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=10), start=1):
@@ -187,30 +185,42 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
         logger.warning("CS_RMA_DETAIL Data sheet: Could not find header row")
         return []
 
-    # Build header map: column index → header name
-    header_map = {}
+    # Build column index list: (index, lowercase_header_name)
+    # DO NOT use a dict — duplicate header names (e.g., "Returned Reason") will overwrite
+    all_headers = []
     for i, h in enumerate(header_cells):
         if h is not None:
-            header_map[str(h).strip().lower()] = i
+            all_headers.append((i, str(h).strip().lower()))
 
-    # Find column indices
-    col_date = header_map.get("effective date")
-    col_order = header_map.get("original order number")
-    col_shipment = header_map.get("shipment number - f4211.shpn")
-    col_credit = header_map.get("credit issued")
-    col_carrier = header_map.get("concatenation carrier number - cars")
+    logger.info(f"Data sheet has {len(all_headers)} header columns at row {header_row_idx}")
 
-    # Returned Reason appears twice (cols 28 and 29)
-    # Col 28 = internal codes (K12, K7, etc.)
-    # Col 29 = readable types (SHORTAGE, DAMAGE, etc.)
-    # We want the SECOND column (readable types) for Grafana filters
-    reason_cols = []
-    for key, idx in header_map.items():
-        if "returned reason" in key:
-            reason_cols.append(idx)
-    
-    # Use second column if multiple exist, otherwise use first
-    col_reason = reason_cols[1] if len(reason_cols) > 1 else (reason_cols[0] if reason_cols else None)
+    # Helper to find first column matching a keyword
+    def find_col(keyword):
+        for idx, name in all_headers:
+            if keyword in name:
+                return idx
+        return None
+
+    # Helper to find ALL columns matching a keyword (returns list of indices)
+    def find_all_cols(keyword):
+        return [idx for idx, name in all_headers if keyword in name]
+
+    # Find required columns
+    col_date = find_col("effective date")
+    col_credit = find_col("credit issued")
+
+    # Find optional columns (may not exist in compact 13-col files)
+    col_order = find_col("original order number")
+    col_shipment = find_col("shipment number")
+    col_carrier = find_col("concatenation carrier number")
+
+    # Returned Reason appears TWICE in 35-col files:
+    #   First  = internal code  (K12, K7, etc.)
+    #   Second = readable type  (SHORTAGE, DAMAGE, etc.)
+    # In 13-col files, there may still be two cols.
+    # We always want the LAST "Returned Reason" column (readable type).
+    reason_cols = find_all_cols("returned reason")
+    col_reason = reason_cols[-1] if reason_cols else None
 
     if col_date is None or col_credit is None:
         logger.warning(
@@ -222,7 +232,7 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
     logger.info(
         f"Data sheet column mapping: date={col_date}, order={col_order}, "
         f"shipment={col_shipment}, credit={col_credit}, carrier={col_carrier}, "
-        f"reason={col_reason}"
+        f"reason={col_reason} (from {len(reason_cols)} 'Returned Reason' cols)"
     )
 
     rows = []
@@ -232,8 +242,10 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
         if all(v is None for v in row):
             continue
 
+        row_len = len(row)
+
         # Get effective date
-        date_val = row[col_date] if col_date < len(row) else None
+        date_val = row[col_date] if col_date < row_len else None
         if date_val is None:
             skipped += 1
             continue
@@ -249,7 +261,7 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
                 continue
 
         # Get credit amount
-        credit_val = row[col_credit] if col_credit < len(row) else None
+        credit_val = row[col_credit] if col_credit < row_len else None
         if credit_val is None:
             skipped += 1
             continue
@@ -261,14 +273,12 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
 
         # Get optional fields safely
         def safe_str(val):
-            """Convert value to string, return None if empty/whitespace."""
             if val is None:
                 return None
             s = str(val).strip()
             return s if s else None
 
         def safe_int_str(val):
-            """Convert numeric value to string of int, return None if invalid."""
             if val is None:
                 return None
             s = str(val).strip()
@@ -279,11 +289,25 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
             except (ValueError, TypeError):
                 return s
 
-        order_id = safe_int_str(row[col_order]) if col_order is not None and col_order < len(row) else None
-        sscc18 = safe_int_str(row[col_shipment]) if col_shipment is not None and col_shipment < len(row) else None
-        carrier_bp = safe_str(row[col_carrier]) if col_carrier is not None and col_carrier < len(row) else None
-        claim_type = safe_str(row[col_reason]) if col_reason is not None and col_reason < len(row) else None
-        if not claim_type:
+        order_id = safe_int_str(row[col_order]) if col_order is not None and col_order < row_len else None
+        sscc18 = safe_int_str(row[col_shipment]) if col_shipment is not None and col_shipment < row_len else None
+        carrier_bp = safe_str(row[col_carrier]) if col_carrier is not None and col_carrier < row_len else None
+        claim_type_raw = safe_str(row[col_reason]) if col_reason is not None and col_reason < row_len else None
+
+        # Normalize claim_type for consistent Grafana filtering:
+        # "OBSOLETE - SHORTAGE - CC" → "SHORTAGE"
+        # "OBSOLETE - DAMAGE -CC" → "DAMAGE"
+        # "DAMAGED IN TRANSIT FROM BAXTER" → "DAMAGE"
+        # "DAMAGED RETURN-CUSTOMER" → "DAMAGE"
+        if claim_type_raw:
+            upper = claim_type_raw.upper()
+            if "SHORTAGE" in upper or "SHORT" in upper:
+                claim_type = "SHORTAGE"
+            elif "DAMAGE" in upper:
+                claim_type = "DAMAGE"
+            else:
+                claim_type = claim_type_raw
+        else:
             claim_type = "SHORTAGE"
 
         rows.append({

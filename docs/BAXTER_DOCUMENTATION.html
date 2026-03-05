@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baxter Data Pipeline — Technical Documentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #0f172a;
+            --secondary: #1e40af;
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
+            --text: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --bg: #ffffff;
+            --bg-alt: #f8fafc;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            line-height: 1.65;
+            background: var(--bg);
+            font-size: 13px;
+        }
+
+        /* ===== COVER PAGE ===== */
+        .cover-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e40af 100%);
+            color: white;
+            text-align: center;
+            padding: 60px;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .cover-page::before {
+            content: '';
+            position: absolute;
+            top: -50%; right: -50%;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 16px; font-weight: 300; letter-spacing: 8px;
+            text-transform: uppercase; margin-bottom: 50px; opacity: 0.8;
+            position: relative; z-index: 1;
+        }
+        .cover-logo strong { font-weight: 700; color: #60a5fa; }
+
+        .cover-badge {
+            display: inline-block;
+            background: rgba(59,130,246,0.2);
+            border: 1px solid rgba(59,130,246,0.4);
+            padding: 8px 24px; border-radius: 50px;
+            font-size: 12px; font-weight: 500; letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 36px;
+            position: relative; z-index: 1;
+        }
+
+        .cover-title {
+            font-size: 40px; font-weight: 800; line-height: 1.2;
+            margin-bottom: 18px; position: relative; z-index: 1;
+        }
+
+        .cover-subtitle {
+            font-size: 17px; font-weight: 300; opacity: 0.8;
+            margin-bottom: 55px; position: relative; z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative; z-index: 1;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 28px; font-size: 13px; opacity: 0.75;
+        }
+        .cover-meta p { margin: 5px 0; }
+
+        /* ===== CONTENT WRAPPER ===== */
+        .content {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 50px 45px;
+        }
+
+        /* ===== SECTION HEADERS ===== */
+        .section-header {
+            margin: 45px 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--secondary);
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+
+        .section-header h2 {
+            font-size: 22px; font-weight: 700; color: var(--primary);
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .section-number {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; background: var(--secondary);
+            color: white; border-radius: 8px; font-size: 15px;
+            font-weight: 700; flex-shrink: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        h3 {
+            font-size: 15px; font-weight: 700; color: var(--primary);
+            margin: 22px 0 9px 0;
+            page-break-after: avoid; break-after: avoid;
+        }
+
+        h4 {
+            font-size: 13px; font-weight: 600; color: var(--secondary);
+            margin: 14px 0 5px 0;
+            page-break-after: avoid; break-after: avoid;
+        }
+
+        p { margin-bottom: 9px; }
+        ul, ol { margin: 5px 0 11px 18px; }
+        li { margin-bottom: 4px; font-size: 12.5px; }
+
+        /* ===== EXEC SUMMARY BOX ===== */
+        .exec-summary {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-left: 4px solid var(--secondary);
+            padding: 18px 22px; border-radius: 0 10px 10px 0;
+            margin: 14px 0 22px 0;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+        .exec-summary p { color: var(--primary); font-size: 13px; margin-bottom: 5px; }
+
+        /* ===== METRIC ROW ===== */
+        .metric-row {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+            margin: 16px 0;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+
+        .metric-card {
+            background: white; border: 1px solid var(--border);
+            border-radius: 8px; padding: 14px; text-align: center;
+        }
+
+        .metric-value { font-size: 26px; font-weight: 800; color: var(--secondary); }
+        .metric-label {
+            font-size: 10px; color: var(--text-light);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;
+        }
+
+        /* ===== TOC ===== */
+        .toc {
+            background: var(--bg-alt); border: 1px solid var(--border);
+            border-radius: 10px; padding: 22px 32px; margin: 22px 0;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+        .toc h3 { margin-top: 0; margin-bottom: 14px; color: var(--secondary); }
+        .toc-item {
+            display: flex; justify-content: space-between;
+            padding: 6px 0; border-bottom: 1px dotted var(--border); font-size: 13px;
+        }
+        .toc-item:last-child { border-bottom: none; }
+        .toc-number { font-weight: 700; color: var(--secondary); margin-right: 10px; }
+
+        /* ===== TABLES ===== */
+        table {
+            width: 100%; border-collapse: collapse;
+            margin: 11px 0 18px 0; font-size: 12px;
+            page-break-inside: auto;
+        }
+
+        thead { display: table-header-group; }
+
+        thead th {
+            background: var(--primary); color: white;
+            padding: 9px 12px; text-align: left;
+            font-weight: 600; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        thead th:first-child { border-radius: 6px 0 0 0; }
+        thead th:last-child { border-radius: 0 6px 0 0; }
+
+        tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        tbody tr:nth-child(even) { background: var(--bg-alt); }
+        tbody tr { page-break-inside: avoid; break-inside: avoid; }
+
+        /* ===== INFO BOXES ===== */
+        .info-box {
+            padding: 14px 18px; border-radius: 8px;
+            margin: 10px 0;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+        .info-box-blue   { background: #eff6ff; border: 1px solid #bfdbfe; }
+        .info-box-green  { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .info-box-yellow { background: #fffbeb; border: 1px solid #fde68a; }
+        .info-box h4 { margin-top: 0; margin-bottom: 5px; }
+        .info-box p  { margin-bottom: 4px; font-size: 12.5px; }
+
+        /* ===== TWO COLUMN ===== */
+        .two-col {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+
+        .col-card {
+            background: var(--bg-alt); border: 1px solid var(--border);
+            border-radius: 8px; padding: 14px;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+        .col-card h4 { margin-top: 0; }
+
+        /* ===== FLOW DIAGRAM ===== */
+        .flow-diagram {
+            page-break-inside: avoid; break-inside: avoid;
+            background: var(--bg-alt); border: 1px solid var(--border);
+            border-radius: 10px; padding: 14px 18px; margin: 12px 0;
+        }
+
+        .flow-step-box {
+            background: white; border: 1.5px solid var(--secondary);
+            border-radius: 8px; padding: 9px 12px; margin: 5px 0;
+        }
+
+        .flow-step-title {
+            font-size: 11.5px; font-weight: 700; color: var(--secondary); margin-bottom: 3px;
+        }
+
+        .flow-step-items { font-size: 11px; color: var(--text); line-height: 1.55; }
+
+        .flow-arrow-down {
+            text-align: center; font-size: 14px; color: var(--secondary);
+            padding: 1px 0; font-weight: bold;
+        }
+
+        /* ===== ARCH ROW ===== */
+        .arch-row {
+            display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; gap: 8px; padding: 18px 0;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+
+        .arch-box {
+            text-align: center; padding: 14px 18px; border-radius: 10px; min-width: 120px;
+        }
+        .arch-box .ab-icon  { font-size: 22px; margin-bottom: 6px; }
+        .arch-box .ab-label { font-weight: 700; font-size: 12px; }
+        .arch-box .ab-sub   { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+
+        .ab-yellow { background: #fef9c3; border: 1.5px solid #eab308; }
+        .ab-blue   { background: #dbeafe; border: 1.5px solid #3b82f6; }
+        .ab-green  { background: #dcfce7; border: 1.5px solid #22c55e; }
+        .ab-purple { background: #ede9fe; border: 1.5px solid #8b5cf6; }
+        .arch-arrow { font-size: 20px; color: var(--text-light); }
+
+        /* ===== HIGHLIGHT SECTION (Production Enhancements) ===== */
+        .highlight-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%);
+            color: white;
+            border-radius: 10px; padding: 30px 35px; margin: 20px 0;
+            page-break-before: always; break-before: page;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .highlight-section .section-header {
+            border-bottom-color: rgba(255,255,255,0.3); margin-top: 0;
+        }
+        .highlight-section .section-header h2 { color: white; }
+        .highlight-section .section-number { background: rgba(255,255,255,0.2); }
+        .highlight-section > p { color: rgba(255,255,255,0.88); margin-bottom: 16px; }
+
+        .hl-list { list-style: none; margin: 16px 0; padding: 0; }
+        .hl-list li {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.15);
+            font-size: 12.5px;
+        }
+        .hl-list li:last-child { border-bottom: none; }
+
+        .hl-check {
+            width: 24px; height: 24px; min-width: 24px;
+            background: rgba(255,255,255,0.15); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; color: #93c5fd;
+        }
+
+        .hl-text h4 { color: #ffffff; margin: 0 0 3px; font-size: 12.5px; }
+        .hl-text p  { color: rgba(255,255,255,0.8); margin: 0; font-size: 11.5px; }
+
+        /* ===== PAGE BREAK ===== */
+        .page-break { page-break-before: always; break-before: page; }
+
+        /* ===== FOOTER ===== */
+        .doc-footer {
+            margin-top: 50px; padding-top: 22px;
+            border-top: 2px solid var(--border);
+            text-align: center; color: var(--text-light); font-size: 11px;
+        }
+        .doc-footer strong { color: var(--primary); }
+
+        /* ===== PRINT ===== */
+        @media print {
+            body {
+                font-size: 11.5px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .content { padding: 25px 35px; }
+            .cover-page { min-height: 100vh; }
+            .page-break { page-break-before: always; break-before: page; }
+            table   { font-size: 10.5px; }
+            thead   { display: table-header-group; }
+            tbody tr { page-break-inside: avoid; break-inside: avoid; }
+            .flow-diagram, .info-box, .exec-summary, .toc,
+            .metric-row, .two-col, .col-card, .arch-row, .flow-step-box {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            h2, h3, h4, .section-header {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+            .highlight-section {
+                page-break-before: always; break-before: page;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            img, svg, pre { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== COVER PAGE ===== -->
+<div class="cover-page">
+    <div class="cover-logo">Baxter <strong>Logistics</strong></div>
+    <div class="cover-badge">Technical Documentation — v1.0</div>
+    <h1 class="cover-title">Baxter Data Pipeline<br>Automated Email-to-Dashboard<br>Processing System</h1>
+    <p class="cover-subtitle">Production-ready email ingestion, PostgreSQL storage<br>and real-time Grafana visualization</p>
+    <div class="cover-meta">
+        <p><strong>Document Version:</strong> 1.0 &nbsp;|&nbsp; Production Release</p>
+        <p><strong>Date:</strong> March 2026</p>
+        <p><strong>Prepared for:</strong> Paul | Baxter Logistics</p>
+        <p><strong>Prepared by:</strong> Muhammad Jahanzaib</p>
+        <p><strong>Classification:</strong> Confidential</p>
+    </div>
+</div>
+
+<!-- ===== CONTENT ===== -->
+<div class="content">
+
+    <!-- TOC -->
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <div class="toc-item"><span><span class="toc-number">1</span> Project Overview</span></div>
+        <div class="toc-item"><span><span class="toc-number">2</span> Development Summary &amp; Hours</span></div>
+        <div class="toc-item"><span><span class="toc-number">3</span> System Architecture</span></div>
+        <div class="toc-item"><span><span class="toc-number">4</span> Data Flow Process</span></div>
+        <div class="toc-item"><span><span class="toc-number">5</span> Technical Components</span></div>
+        <div class="toc-item"><span><span class="toc-number">6</span> Core Features</span></div>
+        <div class="toc-item"><span><span class="toc-number">7</span> Production Enhancements</span></div>
+        <div class="toc-item"><span><span class="toc-number">8</span> Deployment Architecture (AWS)</span></div>
+        <div class="toc-item"><span><span class="toc-number">9</span> Configuration Reference</span></div>
+        <div class="toc-item"><span><span class="toc-number">10</span> Usage Instructions</span></div>
+    </div>
+
+    <!-- ===== 1. PROJECT OVERVIEW ===== -->
+    <div class="section-header">
+        <h2><span class="section-number">1</span> Project Overview</h2>
+    </div>
+
+    <div class="exec-summary">
+        <p>The <strong>Baxter Data Pipeline</strong> is a production-grade automated data processing system that eliminates manual data entry for logistics operations. It monitors a Microsoft 365 mailbox, extracts Excel attachments, parses shipment and RMA data, stores it in PostgreSQL, and visualizes insights through real-time Grafana dashboards — fully automated, 24/7.</p>
+    </div>
+
+    <div class="metric-row">
+        <div class="metric-card">
+            <div class="metric-value">3</div>
+            <div class="metric-label">Docker Services</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">4</div>
+            <div class="metric-label">Dashboards</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">5</div>
+            <div class="metric-label">DB Tables</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">24/7</div>
+            <div class="metric-label">Auto Polling</div>
+        </div>
+    </div>
+
+    <h3>Key Objectives</h3>
+    <ul>
+        <li><strong>Automation:</strong> Eliminate manual data entry — Excel to database automatically</li>
+        <li><strong>Real-time Visibility:</strong> Instant insights through interactive Grafana dashboards</li>
+        <li><strong>Data Integrity:</strong> Accurate, deduplicated storage with conflict handling</li>
+        <li><strong>Scalability:</strong> Handle growing data volumes with bulk insert and connection pooling</li>
+        <li><strong>Reliability:</strong> 24/7 operation with monitoring, retries, and email alerts</li>
+    </ul>
+
+    <!-- ===== 2. DEVELOPMENT SUMMARY ===== -->
+    <div class="page-break"></div>
+    <div class="section-header">
+        <h2><span class="section-number">2</span> Development Summary &amp; Hours</h2>
+    </div>
+
+    <div class="metric-row">
+        <div class="metric-card">
+            <div class="metric-value">60</div>
+            <div class="metric-label">Total Hours</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">11</div>
+            <div class="metric-label">Modules Built</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">2000+</div>
+            <div class="metric-label">Lines of Code</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">4</div>
+            <div class="metric-label">Dashboards</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Phase</th>
+                <th>Work Done</th>
+                <th>Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Infrastructure Setup</td><td>Docker configuration, PostgreSQL schema design, project structure</td><td><strong>8 hrs</strong></td></tr>
+            <tr><td>Microsoft Graph API</td><td>OAuth2 auth, email fetching, attachment download, retry logic</td><td><strong>10 hrs</strong></td></tr>
+            <tr><td>Excel Parser</td><td>Streaming parser, column mapping, data validation for MS_Kargo &amp; CS_RMA</td><td><strong>6 hrs</strong></td></tr>
+            <tr><td>Production Hardening</td><td>Deduplication (SHA-256), connection pooling, bulk inserts, upsert logic</td><td><strong>12 hrs</strong></td></tr>
+            <tr><td>Scheduler &amp; Alerts</td><td>APScheduler implementation, HTML email notification system</td><td><strong>6 hrs</strong></td></tr>
+            <tr><td>AWS Deployment</td><td>EC2 + EBS setup, persistence scripts, systemd service, security groups</td><td><strong>6 hrs</strong></td></tr>
+            <tr><td>Grafana Dashboards</td><td>4 dashboard panels, data source provisioning, auto-refresh configuration</td><td><strong>4 hrs</strong></td></tr>
+            <tr><td>Documentation</td><td>Azure AD guide, AWS setup guide, this technical documentation</td><td><strong>4 hrs</strong></td></tr>
+            <tr><td>Testing &amp; Debugging</td><td>End-to-end testing, bug fixes, performance optimization</td><td><strong>4 hrs</strong></td></tr>
+            <tr style="background:#eff6ff;">
+                <td colspan="2"><strong>TOTAL</strong></td>
+                <td><strong>60 hrs</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ===== 3. SYSTEM ARCHITECTURE ===== -->
+    <div class="section-header">
+        <h2><span class="section-number">3</span> System Architecture</h2>
+    </div>
+
+    <h3>High-Level Architecture</h3>
+    <div class="flow-diagram">
+        <div class="arch-row">
+            <div class="arch-box ab-yellow">
+                <div class="ab-icon">📧</div>
+                <div class="ab-label">Microsoft 365</div>
+                <div class="ab-sub">Email Inbox</div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box ab-blue">
+                <div class="ab-icon">⚙️</div>
+                <div class="ab-label">Ingestor</div>
+                <div class="ab-sub">Python + Graph API</div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box ab-green">
+                <div class="ab-icon">🗄️</div>
+                <div class="ab-label">PostgreSQL</div>
+                <div class="ab-sub">Data Storage</div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box ab-purple">
+                <div class="ab-icon">📊</div>
+                <div class="ab-label">Grafana</div>
+                <div class="ab-sub">Dashboards</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Docker Services</h3>
+    <table>
+        <thead>
+            <tr><th>Service</th><th>Image</th><th>Purpose</th><th>Port</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>baxter_ingestor</code></td><td>Custom Python image</td><td>Email polling, Excel parsing, DB inserts</td><td>—</td></tr>
+            <tr><td><code>baxter_postgres</code></td><td>postgres:15-alpine</td><td>Data persistence (shipments, RMA, claims)</td><td>5432 (localhost)</td></tr>
+            <tr><td><code>baxter_grafana</code></td><td>grafana:10.3.1</td><td>Dashboard visualization</td><td>3000</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ===== 4. DATA FLOW ===== -->
+    <div class="section-header">
+        <h2><span class="section-number">4</span> Data Flow Process</h2>
+    </div>
+
+    <div class="flow-diagram">
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 1 — Email Reception</div>
+            <div class="flow-step-items">Excel files arrive as attachments to monitored Microsoft 365 mailbox</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 2 — Scheduled Polling (every N minutes)</div>
+            <div class="flow-step-items">APScheduler triggers Graph API call to fetch unread emails with attachments</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 3 — Filtering</div>
+            <div class="flow-step-items">Filter by allowed senders and filename keywords (MS_Kargo, CS_RMA)</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 4 — SHA-256 Deduplication Check</div>
+            <div class="flow-step-items">Hash compared against processed_attachments table — duplicates skipped, alert sent</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 5 — Excel Parsing (streaming, read_only=True)</div>
+            <div class="flow-step-items">openpyxl iterates rows, maps columns, validates data types</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 6 — Bulk Insert to PostgreSQL</div>
+            <div class="flow-step-items">execute_values() batch insert with ON CONFLICT upsert handling</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 7 — Email Alert Sent</div>
+            <div class="flow-step-items">HTML success or error notification sent via Microsoft Graph API to ALERT_EMAIL</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 8 — Grafana Dashboard Auto-Refresh</div>
+            <div class="flow-step-items">Dashboards query PostgreSQL directly — new data visible within refresh interval</div>
+        </div>
+    </div>
+
+    <!-- ===== 5. TECHNICAL COMPONENTS ===== -->
+    <div class="page-break"></div>
+    <div class="section-header">
+        <h2><span class="section-number">5</span> Technical Components</h2>
+    </div>
+
+    <h3>ingestor/main.py — Orchestration Service</h3>
+    <div class="info-box info-box-blue">
+        <p>Core scheduling and lifecycle management. Uses APScheduler BlockingScheduler with IntervalTrigger. Reads <code>POLL_INTERVAL_MINUTES</code> from environment. Runs an immediate cycle on startup then schedules recurring jobs with explicit <code>next_run_time</code>.</p>
+    </div>
+
+    <h3>ingestor/graph_api.py — Microsoft Graph API Client</h3>
+    <table>
+        <thead>
+            <tr><th>Function</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>get_access_token()</code></td><td>OAuth2 client credentials flow for token acquisition</td></tr>
+            <tr><td><code>fetch_unread_emails_with_attachments()</code></td><td>Retrieve unread emails with Excel attachments via Graph API</td></tr>
+            <tr><td><code>download_attachment()</code></td><td>Download attachment bytes with retry/backoff support</td></tr>
+            <tr><td><code>mark_email_as_read()</code></td><td>Mark processed email as read to prevent reprocessing</td></tr>
+            <tr><td><code>send_email_alert()</code></td><td>Send HTML notification email (success / error / duplicate)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>ingestor/db.py — Database Layer</h3>
+    <table>
+        <thead>
+            <tr><th>Feature</th><th>Implementation</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Connection Pool</td><td>psycopg2 <code>ThreadedConnectionPool(minconn=1, maxconn=5)</code></td></tr>
+            <tr><td>Bulk Insert</td><td><code>psycopg2.extras.execute_values()</code> for batch performance</td></tr>
+            <tr><td>Deduplication</td><td>UNIQUE constraints + <code>ON CONFLICT DO UPDATE</code> (upsert)</td></tr>
+            <tr><td>Hash Tracking</td><td>SHA-256 of file bytes stored in <code>processed_attachments</code> table</td></tr>
+        </tbody>
+    </table>
+
+    <h3>ingestor/excel_parser.py — Excel Parser</h3>
+    <table>
+        <thead>
+            <tr><th>Feature</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Memory Mode</td><td><code>read_only=True</code> — streaming, no full load into RAM</td></tr>
+            <tr><td>Formulas</td><td><code>data_only=True</code> — returns computed cell values</td></tr>
+            <tr><td>Iteration</td><td><code>iter_rows()</code> — lazy row loading for large files</td></tr>
+            <tr><td>Cleanup</td><td>Explicit <code>wb.close()</code> in <code>finally</code> block</td></tr>
+        </tbody>
+    </table>
+
+    <h3>grafana/dashboards — Pre-configured Dashboards</h3>
+    <table>
+        <thead>
+            <tr><th>Dashboard</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Volume Over Time</td><td>Shipment and RMA volume trends over time</td></tr>
+            <tr><td>Shipment &amp; Order Breakdown</td><td>Status breakdown and order-level metrics</td></tr>
+            <tr><td>Data Quality</td><td>Processing health, insert counts, error tracking</td></tr>
+            <tr><td>Cost Savings</td><td>Financial impact and efficiency metrics</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ===== 6. CORE FEATURES ===== -->
+    <div class="section-header">
+        <h2><span class="section-number">6</span> Core Features</h2>
+    </div>
+
+    <div class="two-col">
+        <div class="col-card">
+            <h4>📧 Email Integration</h4>
+            <p>Automatic monitoring of Microsoft 365 mailbox using Graph API. Filters by sender whitelist and filename keywords.</p>
+        </div>
+        <div class="col-card">
+            <h4>📊 Excel Parsing</h4>
+            <p>Support for MS_Kargo and CS_RMA formats with automatic column mapping and type validation.</p>
+        </div>
+        <div class="col-card">
+            <h4>🗄️ PostgreSQL Storage</h4>
+            <p>Structured schema for shipments, RMA credits, claims — with UNIQUE constraints for data integrity.</p>
+        </div>
+        <div class="col-card">
+            <h4>📈 Grafana Dashboards</h4>
+            <p>4 interactive dashboards with auto-refresh, filters, and PostgreSQL data source provisioning.</p>
+        </div>
+        <div class="col-card">
+            <h4>🐳 Docker Deployment</h4>
+            <p>3-service Docker Compose architecture with health checks and environment-based configuration.</p>
+        </div>
+        <div class="col-card">
+            <h4>⏱️ Scheduled Polling</h4>
+            <p>Configurable polling interval via <code>POLL_INTERVAL_MINUTES</code> environment variable.</p>
+        </div>
+    </div>
+
+    <!-- ===== 7. PRODUCTION ENHANCEMENTS ===== -->
+    <div class="highlight-section">
+        <div class="section-header">
+            <h2><span class="section-number">7</span> Production Enhancements</h2>
+        </div>
+        <p>The following enterprise-grade features were implemented to ensure production reliability, performance, and operational visibility:</p>
+
+        <ul class="hl-list">
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>SHA-256 File Deduplication</h4>
+                    <p>Cryptographic hash comparison prevents duplicate file processing. Each file's hash stored and verified before any insert operation.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Database Connection Pooling</h4>
+                    <p>ThreadedConnectionPool (1–5 connections) prevents connection exhaustion under load and improves query performance.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Bulk Insert with Upsert (ON CONFLICT)</h4>
+                    <p>psycopg2.execute_values() batch inserts with conflict-resolution — 10x faster than row-by-row, handles re-runs safely.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Memory-Efficient Excel Parsing</h4>
+                    <p>Streaming mode (read_only=True + iter_rows) prevents memory overflow for large Excel files with 100K+ rows.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>APScheduler Integration</h4>
+                    <p>Production-grade scheduler replacing naive time.sleep() loops. Supports missed job recovery, graceful shutdown, and configurable intervals.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Retry Logic with Exponential Backoff</h4>
+                    <p>Automatic retry for all Graph API and database operations. Handles transient network or service failures without crashing.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>HTML Email Alert System</h4>
+                    <p>Automated notifications for success, processing errors, and duplicate file detection — sent via Microsoft Graph API.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Docker Health Checks</h4>
+                    <p>PostgreSQL and Grafana containers have health checks for auto-restart on failure and proper service dependency ordering.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Security Hardening</h4>
+                    <p>PostgreSQL bound to localhost only, .env secrets management, .gitignore configuration, no credentials in source code.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>AWS EC2 + EBS Persistent Deployment</h4>
+                    <p>Production deployment on AWS with EBS-backed persistent storage, fstab auto-mount, and systemd service for auto-start on reboot.</p>
+                </div>
+            </li>
+            <li>
+                <div class="hl-check">✓</div>
+                <div class="hl-text">
+                    <h4>Comprehensive Documentation</h4>
+                    <p>Azure AD setup guide, AWS deployment guide, and this full technical documentation for handover and future maintenance.</p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- ===== 8. DEPLOYMENT ===== -->
+    <div class="section-header">
+        <h2><span class="section-number">8</span> Deployment Architecture (AWS)</h2>
+    </div>
+
+    <div class="two-col">
+        <div class="col-card">
+            <h4>AWS EC2 Instance</h4>
+            <ul>
+                <li>Ubuntu 22.04 LTS</li>
+                <li>t2.micro or t3.small recommended</li>
+                <li>Docker + Docker Compose installed</li>
+                <li>systemd service for auto-start on reboot</li>
+            </ul>
+        </div>
+        <div class="col-card">
+            <h4>EBS Volume</h4>
+            <ul>
+                <li>5–50 GB gp3 volume</li>
+                <li>Mounted at <code>/data</code></li>
+                <li>fstab entry for persistence across reboots</li>
+                <li>Postgres data + Grafana config stored on EBS</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>Data Persistence Map</h3>
+    <table>
+        <thead>
+            <tr><th>Data</th><th>Location on EBS</th><th>Persists On</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>PostgreSQL Data</td><td><code>/data/postgres_data</code></td><td>EC2 stop / restart / reboot</td></tr>
+            <tr><td>Grafana Config</td><td><code>/data/grafana_data</code></td><td>EC2 stop / restart / reboot</td></tr>
+            <tr><td>Application Code</td><td><code>/data/baxter</code></td><td>Git-managed (pull to update)</td></tr>
+            <tr><td>Environment Config</td><td><code>/data/baxter/.env</code></td><td>EBS-backed, manual edit via SSH</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Security Group Settings</h3>
+    <table>
+        <thead>
+            <tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>22</td><td>TCP</td><td>Your IP only</td><td>SSH access</td></tr>
+            <tr><td>3000</td><td>TCP</td><td>Your IP only</td><td>Grafana dashboard</td></tr>
+            <tr><td>5432</td><td>TCP</td><td>127.0.0.1</td><td>PostgreSQL (internal only)</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ===== 9. CONFIGURATION ===== -->
+    <div class="page-break"></div>
+    <div class="section-header">
+        <h2><span class="section-number">9</span> Configuration Reference</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>Variable</th><th>Description</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>GRAPH_TENANT_ID</code></td><td>Azure AD Directory (Tenant) ID</td><td>297f29ff-fe28-...</td></tr>
+            <tr><td><code>GRAPH_CLIENT_ID</code></td><td>Azure App Registration Client ID</td><td>046267ec-c0e9-...</td></tr>
+            <tr><td><code>GRAPH_CLIENT_SECRET</code></td><td>Azure App Client Secret value</td><td>NEs8Q~DEGue...</td></tr>
+            <tr><td><code>MAILBOX_EMAIL</code></td><td>Monitored inbox email address</td><td>logistics@company.com</td></tr>
+            <tr><td><code>ALERT_EMAIL</code></td><td>Notification recipient address</td><td>admin@company.com</td></tr>
+            <tr><td><code>POLL_INTERVAL_MINUTES</code></td><td>How often to check for new emails</td><td>5</td></tr>
+            <tr><td><code>ALLOWED_SENDERS</code></td><td>Comma-separated sender whitelist</td><td>user@x.com,user2@y.com</td></tr>
+            <tr><td><code>ALLOWED_FILE_KEYWORDS</code></td><td>Filename must contain one of these</td><td>MS_Kargo,CS_RMA</td></tr>
+            <tr><td><code>POSTGRES_DB</code></td><td>PostgreSQL database name</td><td>baxter_demo</td></tr>
+            <tr><td><code>POSTGRES_USER</code></td><td>PostgreSQL username</td><td>baxter</td></tr>
+            <tr><td><code>POSTGRES_PASSWORD</code></td><td>PostgreSQL password</td><td>secure_password</td></tr>
+        </tbody>
+    </table>
+
+    <!-- ===== 10. USAGE ===== -->
+    <div class="section-header">
+        <h2><span class="section-number">10</span> Usage Instructions</h2>
+    </div>
+
+    <h3>For End Users — How to Submit Data</h3>
+    <div class="flow-diagram">
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 1 — Prepare Excel File</div>
+            <div class="flow-step-items">Ensure filename contains <strong>MS_Kargo</strong> or <strong>CS_RMA</strong></div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 2 — Send Email</div>
+            <div class="flow-step-items">Attach the Excel file and send to the configured mailbox address</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 3 — Automatic Processing (within poll interval)</div>
+            <div class="flow-step-items">System detects, downloads, parses, and inserts data into PostgreSQL</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 4 — Email Confirmation Received</div>
+            <div class="flow-step-items">You receive an HTML email confirming success or describing any error</div>
+        </div>
+        <div class="flow-arrow-down">↓</div>
+        <div class="flow-step-box">
+            <div class="flow-step-title">STEP 5 — View Dashboard</div>
+            <div class="flow-step-items">Open Grafana at <strong>http://18.221.79.137:3000</strong> and see updated data</div>
+        </div>
+    </div>
+
+    <h3>Dashboard Access</h3>
+    <table>
+        <thead>
+            <tr><th>Item</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>URL</td><td><code>http://18.221.79.137:3000</code></td></tr>
+            <tr><td>Username</td><td><code>admin</code></td></tr>
+            <tr><td>Password</td><td><code>admin123</code></td></tr>
+            <tr><td>Auto-Refresh</td><td>Every 5 minutes</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box info-box-yellow">
+        <h4>⚠️ Important Notes</h4>
+        <p>• Email sender must be in the <code>ALLOWED_SENDERS</code> whitelist to be processed</p>
+        <p>• Duplicate files (same content sent again) are detected and skipped automatically — you will be notified</p>
+        <p>• PostgreSQL port 5432 is bound to localhost only — not accessible from outside the server</p>
+        <p>• All data is persisted on EBS — safe across EC2 stop/start cycles</p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="doc-footer">
+        <p><strong>Baxter Data Pipeline</strong> — Technical Documentation v1.0 &nbsp;|&nbsp; March 2026</p>
+        <p>Prepared by Muhammad Jahanzaib &nbsp;|&nbsp; Confidential</p>
+    </div>
+
+</div>
+</body>
+</html>

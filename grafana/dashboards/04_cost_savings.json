@@ -56,7 +56,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT ABS(SUM(credit)) AS value FROM rma_credits WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(credit) >= ${min_credit}",
+                    "rawSql": "SELECT ABS(SUM(claim_amount)) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
                     "refId": "A"
                 }
             ],
@@ -109,7 +109,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT SUM(count) AS value FROM rma_credits WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(credit) >= ${min_credit}",
+                    "rawSql": "SELECT COUNT(*) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
                     "refId": "A"
                 }
             ],
@@ -215,7 +215,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT ROUND(ABS(SUM(credit)) / NULLIF(SUM(count), 0), 2) AS value FROM rma_credits WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(credit) >= ${min_credit}",
+                    "rawSql": "SELECT ROUND(ABS(SUM(claim_amount)) / NULLIF(COUNT(*), 0), 2) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
                     "refId": "A"
                 }
             ],
@@ -396,7 +396,7 @@
                                     {
                                         "type": "value",
                                         "options": {
-                                            "Short Shipment": {
+                                            "SHORTAGE": {
                                                 "color": "orange",
                                                 "index": 0
                                             }
@@ -405,7 +405,7 @@
                                     {
                                         "type": "value",
                                         "options": {
-                                            "Damaged": {
+                                            "DAMAGE": {
                                                 "color": "red",
                                                 "index": 1
                                             }
@@ -456,7 +456,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT\n  claim_date   AS \"Claim Date\",\n  order_id     AS \"Order ID\",\n  sscc18       AS \"SSCC18\",\n  claim_amount AS \"Claim Amount\",\n  claim_type   AS \"Claim Type\",\n  carrier_bp   AS \"Carrier\"\nFROM claim_details\nWHERE $__timeFilter(claim_date)\nORDER BY claim_date DESC\nLIMIT 500",
+                    "rawSql": "SELECT\n  TO_CHAR(claim_date, 'Mon DD, YYYY') AS \"Claim Date\",\n  order_id     AS \"Order ID\",\n  sscc18       AS \"SSCC18\",\n  claim_amount AS \"Claim Amount\",\n  claim_type   AS \"Claim Type\",\n  carrier_bp   AS \"Carrier\"\nFROM claim_details\nWHERE $__timeFilter(claim_date)\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\n  AND ABS(claim_amount) >= ${min_credit}\nORDER BY claim_date DESC\nLIMIT 500",
                     "refId": "A"
                 }
             ],
@@ -529,7 +529,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT\n  carrier_bp,\n  claim_type,\n  ABS(SUM(credit))                                               AS total_credit,\n  SUM(count)                                                     AS claim_count,\n  ROUND(ABS(SUM(credit)) / NULLIF(SUM(count), 0), 2)            AS avg_per_claim\nFROM rma_credits\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\n  AND ABS(credit) >= ${min_credit}\nGROUP BY carrier_bp, claim_type\nORDER BY total_credit DESC",
+                    "rawSql": "SELECT\n  carrier_bp,\n  claim_type,\n  ABS(SUM(claim_amount))                                          AS total_credit,\n  COUNT(*)                                                       AS claim_count,\n  ROUND(ABS(SUM(claim_amount)) / NULLIF(COUNT(*), 0), 2)        AS avg_per_claim\nFROM claim_details\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\n  AND ABS(claim_amount) >= ${min_credit}\nGROUP BY carrier_bp, claim_type\nORDER BY total_credit DESC",
                     "refId": "A"
                 }
             ],
@@ -567,14 +567,14 @@
                     "type": "postgres",
                     "uid": "${DS_POSTGRESQL}"
                 },
-                "definition": "SELECT DISTINCT claim_type FROM rma_credits ORDER BY claim_type",
+                "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
                 "hide": 0,
                 "includeAll": true,
                 "label": "Claim Type",
                 "multi": true,
                 "name": "claim_type",
                 "options": [],
-                "query": "SELECT DISTINCT claim_type FROM rma_credits ORDER BY claim_type",
+                "query": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
                 "refresh": 1,
                 "regex": "",
                 "skipUrlSync": false,
@@ -591,14 +591,14 @@
                     "type": "postgres",
                     "uid": "${DS_POSTGRESQL}"
                 },
-                "definition": "SELECT DISTINCT carrier_bp FROM rma_credits ORDER BY carrier_bp",
+                "definition": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
                 "hide": 0,
                 "includeAll": true,
                 "label": "Carrier",
                 "multi": true,
                 "name": "carrier",
                 "options": [],
-                "query": "SELECT DISTINCT carrier_bp FROM rma_credits ORDER BY carrier_bp",
+                "query": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
                 "refresh": 1,
                 "regex": "",
                 "skipUrlSync": false,

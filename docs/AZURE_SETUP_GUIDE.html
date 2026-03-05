@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure AD Setup Guide for Microsoft Graph API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #0078d4;
+            border-bottom: 3px solid #0078d4;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #106ebe;
+            margin-top: 30px;
+            border-left: 4px solid #0078d4;
+            padding-left: 12px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #0078d4;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+        }
+        .warning {
+            background: #fff4e5;
+            border-left: 4px solid #ff8c00;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #0078d4;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #f0f9ff;
+            border-left: 4px solid #107c10;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #0078d4;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .checkmark {
+            color: #107c10;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Azure AD Setup Guide for Microsoft Graph API</h1>
+
+<p>This guide will help you set up Azure AD credentials to access Microsoft 365 emails via Graph API.</p>
+
+<hr>
+
+<h2>Prerequisites</h2>
+
+<ul>
+    <li><strong>Microsoft 365 account</strong> (the mailbox that receives Excel files)</li>
+    <li><strong>Azure Portal access</strong> (same Microsoft account)</li>
+    <li><strong>Global Admin or Application Admin role</strong> (to create app registrations)</li>
+</ul>
+
+<hr>
+
+<h2>Step 1: Access Azure Portal</h2>
+
+<ol>
+    <li>Go to: <strong>https://portal.azure.com</strong></li>
+    <li>Sign in with your Microsoft 365 account</li>
+    <li>Search for <strong>"Azure Active Directory"</strong> or <strong>"Microsoft Entra ID"</strong> in the top search bar</li>
+</ol>
+
+<hr>
+
+<h2>Step 2: Create App Registration</h2>
+
+<ol>
+    <li>In Azure Active Directory, click <strong>"App registrations"</strong> from the left menu</li>
+    <li>Click <strong>"+ New registration"</strong></li>
+    <li>Fill in the details:
+        <ul>
+            <li><strong>Name</strong>: <code>Email Ingestor Service</code> (or any name you prefer)</li>
+            <li><strong>Supported account types</strong>: Select <strong>"Accounts in this organizational directory only"</strong></li>
+            <li><strong>Redirect URI</strong>: Leave blank (not needed for service apps)</li>
+        </ul>
+    </li>
+    <li>Click <strong>"Register"</strong></li>
+</ol>
+
+<hr>
+
+<h2>Step 3: Copy Application (Client) ID and Tenant ID</h2>
+
+<p>After registration, you'll see the app overview page:</p>
+
+<ol>
+    <li><strong>Copy and save</strong> the following values (you'll need these later):</li>
+</ol>
+
+<pre>Application (client) ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+Directory (tenant) ID:   xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</pre>
+
+<div class="warning">
+    <strong>⚠️ Save these somewhere safe!</strong> You'll put them in the <code>.env</code> file later.
+</div>
+
+<hr>
+
+<h2>Step 4: Create Client Secret</h2>
+
+<ol>
+    <li>In your app registration, click <strong>"Certificates &amp; secrets"</strong> from the left menu</li>
+    <li>Click <strong>"+ New client secret"</strong></li>
+    <li>Add a description: <code>Ingestor Secret</code></li>
+    <li>Set expiration: <strong>24 months</strong> (or longer if available)</li>
+    <li>Click <strong>"Add"</strong></li>
+    <li><strong>⚠️ IMPORTANT</strong>: Copy the <strong>"Value"</strong> immediately!</li>
+</ol>
+
+<pre>Client Secret Value: ABC~xyz123-example-secret-value-here</pre>
+
+<div class="warning">
+    <strong>⚠️ This will only be shown ONCE!</strong> If you lose it, you'll need to create a new one.
+</div>
+
+<hr>
+
+<h2>Step 5: Configure API Permissions</h2>
+
+<ol>
+    <li>Click <strong>"API permissions"</strong> from the left menu</li>
+    <li>Click <strong>"+ Add a permission"</strong></li>
+    <li>Select <strong>"Microsoft Graph"</strong></li>
+    <li>Select <strong>"Application permissions"</strong> (NOT Delegated)</li>
+    <li>Search and add these permissions:
+        <ul>
+            <li><span class="checkmark">✅</span> <strong><code>Mail.Read</code></strong> - Read mail in all mailboxes</li>
+            <li><span class="checkmark">✅</span> <strong><code>Mail.ReadWrite</code></strong> - Read and write mail in all mailboxes (for marking as read)</li>
+        </ul>
+    </li>
+    <li>Click <strong>"Add permissions"</strong></li>
+    <li><strong>⚠️ CRITICAL</strong>: Click <strong>"Grant admin consent for [Your Organization]"</strong>
+        <ul>
+            <li>This button has a shield icon</li>
+            <li>Click it and confirm <strong>"Yes"</strong></li>
+            <li>You should see green checkmarks next to the permissions</li>
+        </ul>
+    </li>
+</ol>
+
+<div class="warning">
+    <strong>⚠️ Without admin consent, the app won't work!</strong>
+</div>
+
+<hr>
+
+<h2>Step 6: Verify Permissions</h2>
+
+<p>Your API permissions table should look like this:</p>
+
+<table>
+    <tr>
+        <th>API / Permissions name</th>
+        <th>Type</th>
+        <th>Admin consent required</th>
+        <th>Status</th>
+    </tr>
+    <tr>
+        <td>Mail.Read</td>
+        <td>Application</td>
+        <td>Yes</td>
+        <td><span class="checkmark">✅ Granted for [Org]</span></td>
+    </tr>
+    <tr>
+        <td>Mail.ReadWrite</td>
+        <td>Application</td>
+        <td>Yes</td>
+        <td><span class="checkmark">✅ Granted for [Org]</span></td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>Step 7: Get Your Mailbox Email Address</h2>
+
+<p>The email address that receives the Excel attachments. Example:</p>
+
+<pre>logistics@yourcompany.com</pre>
+
+<hr>
+
+<h2>✅ Final Checklist</h2>
+
+<p>You should now have these 4 values:</p>
+
+<pre>GRAPH_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+GRAPH_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+GRAPH_CLIENT_SECRET=ABC~xyz123-example-secret-value-here
+MAILBOX_EMAIL=logistics@yourcompany.com</pre>
+
+<hr>
+
+<h2>What's Next?</h2>
+
+<p>Once you have these credentials:</p>
+
+<ol>
+    <li><strong>For testing locally</strong>: Add them to your <code>.env</code> file</li>
+    <li><strong>For EC2 deployment</strong>: Share them securely with the developer (use encrypted channels)</li>
+</ol>
+
+<hr>
+
+<h2>Troubleshooting</h2>
+
+<h3>"Insufficient privileges to complete the operation"</h3>
+<ul>
+    <li>You need <strong>Global Admin</strong> or <strong>Application Admin</strong> role to grant admin consent</li>
+    <li>Ask your IT admin to complete Step 5.7</li>
+</ul>
+
+<h3>"Authentication failed"</h3>
+<ul>
+    <li>Double-check Tenant ID and Client ID are correct</li>
+    <li>Make sure Client Secret wasn't truncated when copied</li>
+    <li>Verify admin consent was granted (green checkmarks)</li>
+</ul>
+
+<h3>"Access denied"</h3>
+<ul>
+    <li>Ensure you selected <strong>Application permissions</strong>, not Delegated</li>
+    <li>Verify <code>Mail.Read</code> and <code>Mail.ReadWrite</code> are both added and consented</li>
+</ul>
+
+<hr>
+
+<h2>Security Notes</h2>
+
+<ul>
+    <li><strong>Never commit credentials to Git</strong></li>
+    <li>Use environment variables only</li>
+    <li>Rotate Client Secrets every 6-12 months</li>
+    <li>Limit permissions to only what's needed (we only need Mail.Read + Mail.ReadWrite)</li>
+</ul>
+
+<hr>
+
+<h2>Need Help?</h2>
+
+<p>If you encounter any issues during setup, share:</p>
+<ol>
+    <li>Screenshot of the error (hide sensitive values)</li>
+    <li>Which step you're stuck on</li>
+    <li>Your Azure AD role/permissions</li>
+</ol>
+
+</body>
+</html>
