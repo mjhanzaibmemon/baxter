@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import from ingestor
-from excel_parser import parse_excel_file
-from db import get_db_connection, insert_shipments, insert_rma_credits
+from excel_parser import detect_and_parse
+from db import get_db_connection, insert_shipments, insert_rma_credits, insert_claim_details
 
 def upload_file(filepath: str):
     """Upload an Excel file directly to the database"""
@@ -37,12 +37,13 @@ def upload_file(filepath: str):
     
     # Parse Excel
     print(f"\n🔍 Parsing Excel file...")
-    ms_kargo_rows, cs_rma_rows = parse_excel_file(filepath.name, file_bytes)
+    ms_kargo_rows, cs_rma_rows, claim_rows = detect_and_parse(filepath.name, file_bytes)
     
     print(f"   Found {len(ms_kargo_rows)} MS_Kargo rows")
     print(f"   Found {len(cs_rma_rows)} CS_RMA rows")
+    print(f"   Found {len(claim_rows)} Claim detail rows")
     
-    if not ms_kargo_rows and not cs_rma_rows:
+    if not ms_kargo_rows and not cs_rma_rows and not claim_rows:
         print(f"❌ No valid data found in file")
         return False
     
@@ -58,6 +59,10 @@ def upload_file(filepath: str):
         if cs_rma_rows:
             inserted = insert_rma_credits(conn, cs_rma_rows)
             print(f"   ✅ Inserted {inserted} RMA credits")
+        
+        if claim_rows:
+            inserted = insert_claim_details(conn, claim_rows)
+            print(f"   ✅ Inserted {inserted} claim details")
         
         conn.commit()
         print(f"\n🎉 SUCCESS! Data uploaded to database")

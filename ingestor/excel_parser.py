@@ -200,12 +200,17 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
     col_credit = header_map.get("credit issued")
     col_carrier = header_map.get("concatenation carrier number - cars")
 
-    # Returned Reason appears twice (cols 28 and 29), grab the first one
-    col_reason = None
+    # Returned Reason appears twice (cols 28 and 29)
+    # Col 28 = internal codes (K12, K7, etc.)
+    # Col 29 = readable types (SHORTAGE, DAMAGE, etc.)
+    # We want the SECOND column (readable types) for Grafana filters
+    reason_cols = []
     for key, idx in header_map.items():
         if "returned reason" in key:
-            col_reason = idx
-            break
+            reason_cols.append(idx)
+    
+    # Use second column if multiple exist, otherwise use first
+    col_reason = reason_cols[1] if len(reason_cols) > 1 else (reason_cols[0] if reason_cols else None)
 
     if col_date is None or col_credit is None:
         logger.warning(
