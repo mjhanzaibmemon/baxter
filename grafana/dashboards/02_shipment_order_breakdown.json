@@ -245,6 +245,16 @@
                             {
                                 "id": "custom.axisPlacement",
                                 "value": "hidden"
+                            },
+                            {
+                                "id": "custom.text",
+                                "value": {
+                                    "format": "value",
+                                    "color": "#73BF69",
+                                    "size": 36,
+                                    "bold": true,
+                                    "align": "left"
+                                }
                             }
                         ]
                     }
