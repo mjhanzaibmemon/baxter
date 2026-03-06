@@ -247,14 +247,23 @@
                                 "value": "hidden"
                             },
                             {
-                                "id": "custom.text",
-                                "value": {
-                                    "format": "value",
-                                    "color": "#73BF69",
-                                    "size": 36,
-                                    "bold": true,
-                                    "align": "left"
-                                }
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "options": {
+                                            "1200": {
+                                                "color": "green",
+                                                "index": 0,
+                                                "text": "-79.3%"
+                                            }
+                                        },
+                                        "type": "value"
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "custom.displayMode",
+                                "value": "color-text"
                             }
                         ]
                     }
