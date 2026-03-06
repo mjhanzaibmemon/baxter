@@ -15,7 +15,7 @@ load_dotenv()
 
 # Import from ingestor
 from excel_parser import detect_and_parse
-from db import insert_shipments, insert_rma_credits, insert_claim_details
+from db import insert_shipments, insert_rma_credits, insert_claim_details, rebuild_daily_history
 
 def upload_file(filepath: str):
     """Upload an Excel file directly to the database"""
@@ -63,6 +63,8 @@ def upload_file(filepath: str):
         if claim_rows:
             inserted = insert_claim_details(claim_rows, source)
             print(f"  Inserted {inserted} claim details")
+            rebuild_daily_history()
+            print(f"  Daily history rebuilt for time series")
         
         print(f"\nSUCCESS! Data uploaded to database")
         print(f"  Check Grafana dashboards: http://localhost:3000")
