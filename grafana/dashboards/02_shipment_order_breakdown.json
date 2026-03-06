@@ -2,7 +2,52 @@
     "__inputs": [],
     "__requires": [],
     "annotations": {
-        "list": []
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            },
+            {
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "enable": true,
+                "iconColor": "rgba(242, 135, 10, 0.2)",
+                "name": "Before Scanning Region",
+                "rawQuery": "SELECT '2024-03-01'::timestamp AS time, '2024-05-01'::timestamp AS timeEnd, 'Before Scanning' AS text",
+                "target": {
+                    "limit": 100,
+                    "matchAny": false,
+                    "tags": [],
+                    "type": "dashboard"
+                }
+            },
+            {
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "enable": true,
+                "iconColor": "rgba(115, 191, 105, 0.2)",
+                "name": "After Scanning Region",
+                "rawQuery": "SELECT '2024-05-01'::timestamp AS time, '2025-01-01'::timestamp AS timeEnd, 'May 1 2024' AS text",
+                "target": {
+                    "limit": 100,
+                    "matchAny": false,
+                    "tags": [],
+                    "type": "dashboard"
+                }
+            }
+        ]
     },
     "description": "Barcode Validation & Claims Dashboard — Search by Order ID or SSCC18, view scanned barcodes, and track cost savings before vs after barcode scanning",
     "editable": true,
@@ -97,8 +142,12 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
+                        "drawStyle": "line",
                         "fillOpacity": 15,
-                        "lineWidth": 2.5,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "auto",
                         "spanNulls": false
                     },
                     "unit": "currencyUSD"
@@ -116,6 +165,10 @@
                                     "fixedColor": "#F2870A",
                                     "mode": "fixed"
                                 }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
                             }
                         ]
                     },
@@ -133,15 +186,65 @@
                                 }
                             },
                             {
+                                "id": "custom.showPoints",
+                                "value": "always"
+                            },
+                            {
                                 "id": "custom.lineWidth",
                                 "value": 2
                             },
                             {
                                 "id": "custom.lineStyle",
                                 "value": {
-                                    "dash": [8, 4],
+                                    "dash": [
+                                        8,
+                                        4
+                                    ],
                                     "fill": "dash"
                                 }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Reduction Text"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.drawStyle",
+                                "value": "points"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.hideFrom",
+                                "value": {
+                                    "legend": true,
+                                    "tooltip": true,
+                                    "viz": false
+                                }
+                            },
+                            {
+                                "id": "custom.showPoints",
+                                "value": "never"
+                            },
+                            {
+                                "id": "mappings",
+                                "value": []
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "hidden"
                             }
                         ]
                     }
@@ -161,6 +264,9 @@
                 },
                 "tooltip": {
                     "mode": "multi"
+                },
+                "text": {
+                    "valueSize": 45
                 }
             },
             "targets": [
@@ -172,6 +278,15 @@
                     "format": "time_series",
                     "rawSql": "SELECT\n  claim_date::date::timestamp AS time,\n  SUM(ABS(claim_amount)) AS \"Total Claims $\",\n  AVG(SUM(ABS(claim_amount))) OVER (ORDER BY claim_date::date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS \"7-Day Moving Avg\"\nFROM claim_details\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\nGROUP BY claim_date::date\nORDER BY claim_date::date",
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "time_series",
+                    "rawSql": "SELECT '2024-05-18'::timestamp AS time, 1200 AS \"Reduction Text\"",
+                    "refId": "B"
                 }
             ],
             "title": "Total Claims Before vs. After Barcode Scanning",
