@@ -27,7 +27,15 @@ def parse_ms_kargo(file_bytes: bytes) -> list[dict]:
     Expected headers (row 1): APPOINTMENT_DATE, PRO_NUMBER, SSCC18, SCAC, ORDER_ID, SHIPMENT_ID
     Returns list of dicts ready for DB insert.
     """
-    wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), read_only=True, data_only=True)
+    if not file_bytes or len(file_bytes) < 100:
+        logger.warning("MS_Kargo: Empty or invalid file")
+        return []
+    
+    try:
+        wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), read_only=True, data_only=True)
+    except Exception as e:
+        logger.error(f"MS_Kargo: Failed to open Excel file: {e}")
+        return []
 
     # Try 'Sheet1' first, fallback to active sheet
     ws = wb["Sheet1"] if "Sheet1" in wb.sheetnames else wb.active
@@ -87,7 +95,15 @@ def parse_rma_detail(file_bytes: bytes) -> list[dict]:
     Headers start at row 3: Carrier/BP, Credit, Count
     Returns list of dicts for rma_credits table.
     """
-    wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), read_only=True, data_only=True)
+    if not file_bytes or len(file_bytes) < 100:
+        logger.warning("CS_RMA_DETAIL: Empty or invalid file")
+        return []
+    
+    try:
+        wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), read_only=True, data_only=True)
+    except Exception as e:
+        logger.error(f"CS_RMA_DETAIL: Failed to open Excel file: {e}")
+        return []
 
     ws = wb["Summary"] if "Summary" in wb.sheetnames else wb.active
 
@@ -160,9 +176,17 @@ def parse_rma_data_sheet(file_bytes: bytes) -> list[dict]:
     We use dynamic header matching by scanning ALL column names, not a fixed
     dict (which breaks when duplicate header names exist like "Returned Reason").
     """
-    wb = openpyxl.load_workbook(
-        filename=io.BytesIO(file_bytes), read_only=True, data_only=True
-    )
+    if not file_bytes or len(file_bytes) < 100:
+        logger.warning("CS_RMA_DETAIL Data: Empty or invalid file")
+        return []
+    
+    try:
+        wb = openpyxl.load_workbook(
+            filename=io.BytesIO(file_bytes), read_only=True, data_only=True
+        )
+    except Exception as e:
+        logger.error(f"CS_RMA_DETAIL Data: Failed to open Excel file: {e}")
+        return []
 
     if "Data" not in wb.sheetnames:
         logger.warning("CS_RMA_DETAIL: 'Data' sheet not found — no claim details to parse")
