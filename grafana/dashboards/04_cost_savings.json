@@ -56,7 +56,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT ABS(SUM(claim_amount)) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
+                    "rawSql": "SELECT SUM(ABS(claim_amount)) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
                     "refId": "A"
                 }
             ],
@@ -215,7 +215,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT ROUND(ABS(SUM(claim_amount)) / NULLIF(COUNT(*), 0), 2) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
+                    "rawSql": "SELECT ROUND(SUM(ABS(claim_amount)) / NULLIF(COUNT(*), 0), 2) AS value FROM claim_details WHERE 1=1 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote})) AND ABS(claim_amount) >= ${min_credit}",
                     "refId": "A"
                 }
             ],
@@ -243,7 +243,7 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "Short Shipment $"
+                            "options": "Total Claims $"
                         },
                         "properties": [
                             {
@@ -309,11 +309,11 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "time_series",
-                    "rawSql": "SELECT\n  claim_date::timestamp AS time,\n  total_amount          AS \"Short Shipment $\",\n  moving_avg_7d         AS \"7-Day Moving Avg\"\nFROM claim_daily_history\nORDER BY claim_date",
+                    "rawSql": "SELECT\n  claim_date::date::timestamp AS time,\n  SUM(ABS(claim_amount)) AS \"Total Claims $\",\n  AVG(SUM(ABS(claim_amount))) OVER (\n    ORDER BY claim_date::date\n    ROWS BETWEEN 6 PRECEDING AND CURRENT ROW\n  ) AS \"7-Day Moving Avg\"\nFROM claim_details\nWHERE $__timeFilter(claim_date)\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\nGROUP BY claim_date::date\nORDER BY claim_date::date",
                     "refId": "A"
                 }
             ],
-            "title": "Total Claims Before vs. After Barcode Scanning",
+            "title": "Claims Over Time (Filtered)",
             "type": "timeseries"
         },
         {
@@ -529,7 +529,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT\n  carrier_bp,\n  claim_type,\n  ABS(SUM(claim_amount))                                          AS total_credit,\n  COUNT(*)                                                       AS claim_count,\n  ROUND(ABS(SUM(claim_amount)) / NULLIF(COUNT(*), 0), 2)        AS avg_per_claim\nFROM claim_details\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\n  AND ABS(claim_amount) >= ${min_credit}\nGROUP BY carrier_bp, claim_type\nORDER BY total_credit DESC",
+                    "rawSql": "SELECT\n  carrier_bp,\n  claim_type,\n  SUM(ABS(claim_amount))                                          AS total_credit,\n  COUNT(*)                                                       AS claim_count,\n  ROUND(SUM(ABS(claim_amount)) / NULLIF(COUNT(*), 0), 2)        AS avg_per_claim\nFROM claim_details\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\n  AND ABS(claim_amount) >= ${min_credit}\nGROUP BY carrier_bp, claim_type\nORDER BY total_credit DESC",
                     "refId": "A"
                 }
             ],

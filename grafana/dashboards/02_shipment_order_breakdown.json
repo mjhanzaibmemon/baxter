@@ -107,7 +107,7 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "Short Shipment $"
+                            "options": "Total Claims $"
                         },
                         "properties": [
                             {
@@ -170,7 +170,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "time_series",
-                    "rawSql": "SELECT\n  claim_date::timestamp AS time,\n  total_amount          AS \"Short Shipment $\",\n  moving_avg_7d         AS \"7-Day Moving Avg\"\nFROM claim_daily_history\nORDER BY claim_date",
+                    "rawSql": "SELECT\n  claim_date::date::timestamp AS time,\n  SUM(ABS(claim_amount)) AS \"Total Claims $\",\n  AVG(SUM(ABS(claim_amount))) OVER (ORDER BY claim_date::date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS \"7-Day Moving Avg\"\nFROM claim_details\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\nGROUP BY claim_date::date\nORDER BY claim_date::date",
                     "refId": "A"
                 }
             ],
