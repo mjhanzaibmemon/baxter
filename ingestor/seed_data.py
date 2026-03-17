@@ -1,9 +1,10 @@
 """
-seed_data.py — Load sample Excel files + synthetic claim history into DB for demo.
+seed_data.py — Load sample files + synthetic claim history into DB for demo.
 
 Usage:
-    python seed_data.py                     # loads all Excel + claim history
-    python seed_data.py --file my_file.xlsx # load specific file
+    python seed_data.py                      # loads all sample files + claim history
+    python seed_data.py --file my_file.xlsx  # load specific file
+    python seed_data.py --file Result_27.csv # load specific file
     python seed_data.py --reset             # clear DB and reload everything
 """
 import logging
@@ -190,15 +191,15 @@ def main():
     if do_reset:
         reset_db()
 
-    # ── Seed Excel files ──────────────────────────────────────────────
+    # ── Seed sample files ─────────────────────────────────────────────
     excel_dir = Path(os.getenv("DEMO_EXCEL_DIR", "/app/sample_data"))
 
     if specific_file:
         seed_file(Path(specific_file))
     else:
-        files = sorted(excel_dir.glob("*.xlsx"))
+        files = sorted(excel_dir.glob("*.xlsx")) + sorted(excel_dir.glob("*.csv"))
         if not files:
-            logger.warning(f"No .xlsx files found in {excel_dir}")
+            logger.warning(f"No sample files found in {excel_dir}")
         else:
             for f in files:
                 seed_file(f)

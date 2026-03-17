@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Manual Excel file upload script - bypasses email and directly processes Excel files
-Usage: python manual_upload.py path/to/excelfile.xlsx
+Manual file upload script - bypasses email and directly processes supported files.
+Usage: python manual_upload.py path/to/file.xlsx
+    python manual_upload.py path/to/file.csv
 """
 import sys
 import os
@@ -18,15 +19,15 @@ from excel_parser import detect_and_parse
 from db import insert_shipments, insert_rma_credits, insert_claim_details, rebuild_daily_history
 
 def upload_file(filepath: str):
-    """Upload an Excel file directly to the database"""
+    """Upload a supported file directly to the database."""
     filepath = Path(filepath)
     
     if not filepath.exists():
         print(f"File not found: {filepath}")
         return False
     
-    if not filepath.suffix.lower() == '.xlsx':
-        print(f"Not an Excel file: {filepath}")
+    if filepath.suffix.lower() not in {'.xlsx', '.csv'}:
+        print(f"Unsupported file type: {filepath}")
         return False
     
     print(f"\nProcessing file: {filepath.name}")
@@ -35,8 +36,8 @@ def upload_file(filepath: str):
     # Read file
     file_bytes = filepath.read_bytes()
     
-    # Parse Excel
-    print(f"\nParsing Excel file...")
+    # Parse file
+    print(f"\nParsing file...")
     file_type, rows, claim_rows = detect_and_parse(filepath.name, file_bytes)
     
     print(f"  File type: {file_type}")
@@ -77,9 +78,10 @@ def upload_file(filepath: str):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python manual_upload.py <excel_file.xlsx>")
+        print("Usage: python manual_upload.py <file.xlsx|file.csv>")
         print("\nExample:")
         print("  python manual_upload.py sample_data/MS_Kargo.xlsx")
+        print("  python manual_upload.py sample_data/Result_27.csv")
         print("  python manual_upload.py sample_data/CS_RMA_DETAIL.xlsx")
         sys.exit(1)
     

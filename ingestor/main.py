@@ -41,6 +41,18 @@ from db import (
 )
 
 
+def _build_success_email_body(filename: str, file_type: str, total_inserted: int, detail_lines: list[str]) -> str:
+    return f"""File: {filename}
+File Type: {file_type.upper()}
+Total Rows Inserted: {total_inserted}
+
+Details:
+{chr(10).join('  - ' + line for line in detail_lines)}
+
+Dashboard: http://localhost:3000
+Status: ✅ Ready for viewing"""
+
+
 def run_ingestion_cycle():
     """One full ingestion cycle: poll → parse → deduplicate → insert."""
     logger.info("=" * 60)
@@ -114,16 +126,50 @@ Please check the file format and try again.""",
         # --- Insert to DB ---
         try:
             n = 0
+            details = []
             if file_type == "shipments":
-                n = insert_shipments(rows, source_file=filename)
+                shipment_stats = insert_shipments(rows, source_file=filename, return_stats=True)
+                n = shipment_stats["inserted_rows"]
+                details.extend([
+                    f"Shipments parsed: {shipment_stats['parsed_rows']}",
+                    f"New shipments inserted: {shipment_stats['inserted_rows']}",
+                    f"Duplicate shipments skipped: {shipment_stats['duplicate_rows']}",
+                    f"Duplicate shipments already in DB: {shipment_stats['duplicate_rows_existing']}",
+                    f"Duplicate shipments inside file: {shipment_stats['duplicate_rows_in_file']}",
+                ])
             elif file_type == "rma":
+                rma_stats = None
+                claim_stats = None
+                daily_history_rows = 0
                 if rows:
-                    n = insert_rma_credits(rows, source_file=filename)
+                    rma_stats = insert_rma_credits(rows, source_file=filename, return_stats=True)
+                    n += rma_stats["inserted_rows"]
                 if claim_rows:
-                    n_claims = insert_claim_details(claim_rows, source_file=filename)
-                    logger.info(f"  ↳ Inserted {n_claims} claim detail rows")
-                    rebuild_daily_history()
-                    n += n_claims
+                    claim_stats = insert_claim_details(claim_rows, source_file=filename, return_stats=True)
+                    logger.info(
+                        f"  ↳ Claim details processed: {claim_stats['parsed_rows']} parsed, "
+                        f"{claim_stats['inserted_rows']} inserted, {claim_stats['updated_rows']} updated"
+                    )
+                    daily_history_rows = rebuild_daily_history()
+                    n += claim_stats["inserted_rows"]
+
+                if rma_stats:
+                    details.extend([
+                        f"RMA credits parsed: {rma_stats['parsed_rows']}",
+                        f"New RMA credits inserted: {rma_stats['inserted_rows']}",
+                        f"Duplicate RMA credits skipped: {rma_stats['duplicate_rows']}",
+                        f"Duplicate RMA credits already in DB: {rma_stats['duplicate_rows_existing']}",
+                        f"Duplicate RMA credits inside file: {rma_stats['duplicate_rows_in_file']}",
+                    ])
+                if claim_stats:
+                    details.extend([
+                        f"Claim details parsed: {claim_stats['parsed_rows']}",
+                        f"Unique claim details after file dedup: {claim_stats['unique_rows']}",
+                        f"New claim details inserted: {claim_stats['inserted_rows']}",
+                        f"Existing claim details updated: {claim_stats['updated_rows']}",
+                        f"Duplicate claim rows inside file: {claim_stats['duplicate_rows_in_file']}",
+                        f"Daily history rows rebuilt: {daily_history_rows}",
+                    ])
 
             total_inserted += n
 
@@ -132,30 +178,14 @@ Please check the file format and try again.""",
             logger.info(f"  ↳ Done: {n} rows inserted from {filename}")
             
             # Send success alert
-            if n > 0:
-                details = []
-                if file_type == "shipments":
-                    details.append(f"Shipments inserted: {n}")
-                elif file_type == "rma":
-                    if rows:
-                        details.append(f"RMA credits: {len(rows)}")
-                    if claim_rows:
-                        details.append(f"Claim details: {len(claim_rows)}")
-                        details.append(f"Daily history rows: {n - len(rows) if rows else n}")
-                
-                send_email_alert(
-                    subject=f"File Processed Successfully: {filename}",
-                    body=f"""File: {filename}
-File Type: {file_type.upper()}
-Total Rows Inserted: {n}
+            if not details:
+                details.append("No supported rows were inserted")
 
-Details:
-{chr(10).join('  - ' + d for d in details)}
-
-Dashboard: http://localhost:3000
-Status: ✅ Ready for viewing""",
-                    is_success=True
-                )
+            send_email_alert(
+                subject=f"File Processed Successfully: {filename}",
+                body=_build_success_email_body(filename, file_type, n, details),
+                is_success=True
+            )
 
         except Exception as e:
             logger.error(f"  ↳ DB error for {filename}: {e}")

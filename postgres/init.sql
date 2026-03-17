@@ -61,12 +61,78 @@ CREATE TABLE IF NOT EXISTS claim_details (
     claim_type      VARCHAR(50)   DEFAULT 'Short Shipment',
     carrier_bp      TEXT,
     ingested_at     TIMESTAMPTZ   DEFAULT NOW(),
-    -- Deduplication: same date + order + sscc18 + amount = same claim
-    CONSTRAINT uq_claim_detail UNIQUE (claim_date, order_id, sscc18, claim_amount)
+    -- Schema v2: additional columns from 35-col CS_RMA_DETAIL Data sheet
+    rma_status       VARCHAR(20),
+    rma_date         TIMESTAMPTZ,
+    doc_type         VARCHAR(10),
+    return_doc_type  VARCHAR(10),
+    rma_order_number VARCHAR(50),
+    po_number        VARCHAR(50),
+    order_type       VARCHAR(10),
+    reference_number_qualifier VARCHAR(50),
+    bol_number       VARCHAR(50),
+    original_line_number INTEGER,
+    line_number      INTEGER,
+    returned_material_status TEXT,
+    contact_name     TEXT,
+    description      TEXT,
+    address_number   VARCHAR(50),
+    address_name     TEXT,
+    ship_to_number   VARCHAR(50),
+    ship_to_name     TEXT,
+    item_number      VARCHAR(50),
+    unit_of_measure  VARCHAR(20),
+    quantity         INTEGER,
+    reason_code      VARCHAR(10),
+    reason_text      TEXT,
+    branch_code      VARCHAR(50),
+    branch           TEXT,
+    business_unit_code VARCHAR(50),
+    business_unit    TEXT,
+    serial_number_lot TEXT,
+    lot_serial_number TEXT
 );
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS rma_status VARCHAR(20);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS rma_date TIMESTAMPTZ;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS doc_type VARCHAR(10);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS return_doc_type VARCHAR(10);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS rma_order_number VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS po_number VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS order_type VARCHAR(10);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS reference_number_qualifier VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS bol_number VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS original_line_number INTEGER;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS line_number INTEGER;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS returned_material_status TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS contact_name TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS address_number VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS address_name TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS ship_to_number VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS ship_to_name TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS item_number VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS unit_of_measure VARCHAR(20);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS quantity INTEGER;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS reason_code VARCHAR(10);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS reason_text TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS branch_code VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS branch TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS business_unit_code VARCHAR(50);
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS business_unit TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS serial_number_lot TEXT;
+ALTER TABLE claim_details ADD COLUMN IF NOT EXISTS lot_serial_number TEXT;
+-- Use functional index with COALESCE to handle NULLs (NULL != NULL in SQL UNIQUE)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_claim_unique 
+    ON claim_details (claim_date, COALESCE(order_id, ''), COALESCE(sscc18, ''), claim_amount);
 CREATE INDEX IF NOT EXISTS idx_claim_details_date     ON claim_details(claim_date);
 CREATE INDEX IF NOT EXISTS idx_claim_details_order_id ON claim_details(order_id);
 CREATE INDEX IF NOT EXISTS idx_claim_details_sscc18   ON claim_details(sscc18);
+CREATE INDEX IF NOT EXISTS idx_claim_details_rma_status  ON claim_details(rma_status);
+CREATE INDEX IF NOT EXISTS idx_claim_details_doc_type    ON claim_details(doc_type);
+CREATE INDEX IF NOT EXISTS idx_claim_details_ship_to     ON claim_details(ship_to_name);
+CREATE INDEX IF NOT EXISTS idx_claim_details_item        ON claim_details(item_number);
+CREATE INDEX IF NOT EXISTS idx_claim_details_reason_code ON claim_details(reason_code);
+CREATE INDEX IF NOT EXISTS idx_claim_details_branch      ON claim_details(branch);
 
 -- -------------------------------------------------------
 -- Daily aggregated claim history (Before vs After chart)

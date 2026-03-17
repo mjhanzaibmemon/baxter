@@ -226,6 +226,128 @@
             ],
             "title": "Shipments per Day",
             "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "align": "auto",
+                        "filterable": true
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Appointment Date"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 180
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "PRO Number"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 130
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "SSCC18"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 210
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Carrier"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Order ID"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 170
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Shipment ID"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 110
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 23
+            },
+            "id": 6,
+            "options": {
+                "footer": {
+                    "show": true,
+                    "countRows": true,
+                    "reducer": ["count"]
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Appointment Date"
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Appointment Date\",\n  COALESCE(pro_number, '-') AS \"PRO Number\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  order_id AS \"Order ID\",\n  shipment_id AS \"Shipment ID\",\n  COALESCE(source_file, '-') AS \"Source File\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\nORDER BY appointment_date DESC\nLIMIT 500",
+                    "refId": "A"
+                }
+            ],
+            "title": "Shipment Details",
+            "type": "table"
         }
     ],
     "refresh": "1m",
@@ -250,7 +372,7 @@
         ]
     },
     "time": {
-        "from": "now-90d",
+        "from": "2025-01-01T00:00:00.000Z",
         "to": "now"
     },
     "timepicker": {},

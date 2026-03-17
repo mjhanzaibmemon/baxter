@@ -80,14 +80,37 @@ def mark_attachment_processed(file_bytes: bytes, filename: str, email_id: str = 
         release_connection(conn)
 
 
-def insert_shipments(rows: list[dict], source_file: str) -> int:
+def _shipment_key(row: dict) -> tuple:
+    return (row.get("sscc18") or "", row.get("order_id") or "")
+
+
+def _rma_credit_key(row: dict) -> tuple:
+    return (
+        row.get("carrier_bp") or "",
+        row.get("credit"),
+        row.get("count"),
+    )
+
+
+def insert_shipments(rows: list[dict], source_file: str, return_stats: bool = False):
     """
     Bulk-insert shipment rows using execute_values (10-50x faster).
     Uses ON CONFLICT DO NOTHING for deduplication.
     Returns the number of rows actually inserted.
     """
     if not rows:
-        return 0
+        stats = {
+            "parsed_rows": 0,
+            "unique_rows": 0,
+            "inserted_rows": 0,
+            "duplicate_rows": 0,
+            "duplicate_rows_in_file": 0,
+            "duplicate_rows_existing": 0,
+        }
+        return stats if return_stats else 0
+
+    unique_rows = len({_shipment_key(row) for row in rows})
+    duplicate_rows_in_file = len(rows) - unique_rows
 
     conn = get_connection()
     try:
@@ -120,8 +143,21 @@ def insert_shipments(rows: list[dict], source_file: str) -> int:
             count_after = _count_table(cur, "shipments")
             inserted = count_after - count_before
         conn.commit()
-        logger.info(f"Bulk inserted {inserted}/{len(rows)} rows from '{source_file}' (duplicates skipped)")
-        return inserted
+        duplicate_rows_existing = max(unique_rows - inserted, 0)
+        stats = {
+            "parsed_rows": len(rows),
+            "unique_rows": unique_rows,
+            "inserted_rows": inserted,
+            "duplicate_rows": len(rows) - inserted,
+            "duplicate_rows_in_file": duplicate_rows_in_file,
+            "duplicate_rows_existing": duplicate_rows_existing,
+        }
+        logger.info(
+            f"Bulk inserted {inserted}/{len(rows)} rows from '{source_file}' "
+            f"(duplicates skipped: total={stats['duplicate_rows']}, "
+            f"in_file={duplicate_rows_in_file}, existing={duplicate_rows_existing})"
+        )
+        return stats if return_stats else inserted
     except Exception as e:
         conn.rollback()
         logger.error(f"DB insert error: {e}")
@@ -136,10 +172,21 @@ def _count_table(cur, table: str) -> int:
     return cur.fetchone()[0]
 
 
-def insert_rma_credits(rows: list[dict], source_file: str) -> int:
+def insert_rma_credits(rows: list[dict], source_file: str, return_stats: bool = False):
     """Bulk-insert RMA credit rows using execute_values. Uses ON CONFLICT for dedup."""
     if not rows:
-        return 0
+        stats = {
+            "parsed_rows": 0,
+            "unique_rows": 0,
+            "inserted_rows": 0,
+            "duplicate_rows": 0,
+            "duplicate_rows_in_file": 0,
+            "duplicate_rows_existing": 0,
+        }
+        return stats if return_stats else 0
+
+    unique_rows = len({_rma_credit_key(row) for row in rows})
+    duplicate_rows_in_file = len(rows) - unique_rows
 
     conn = get_connection()
     try:
@@ -168,8 +215,21 @@ def insert_rma_credits(rows: list[dict], source_file: str) -> int:
             count_after = _count_table(cur, "rma_credits")
             inserted = count_after - count_before
         conn.commit()
-        logger.info(f"Bulk inserted {inserted}/{len(rows)} RMA credit rows from '{source_file}' (duplicates skipped)")
-        return inserted
+        duplicate_rows_existing = max(unique_rows - inserted, 0)
+        stats = {
+            "parsed_rows": len(rows),
+            "unique_rows": unique_rows,
+            "inserted_rows": inserted,
+            "duplicate_rows": len(rows) - inserted,
+            "duplicate_rows_in_file": duplicate_rows_in_file,
+            "duplicate_rows_existing": duplicate_rows_existing,
+        }
+        logger.info(
+            f"Bulk inserted {inserted}/{len(rows)} RMA credit rows from '{source_file}' "
+            f"(duplicates skipped: total={stats['duplicate_rows']}, "
+            f"in_file={duplicate_rows_in_file}, existing={duplicate_rows_existing})"
+        )
+        return stats if return_stats else inserted
     except Exception as e:
         conn.rollback()
         logger.error(f"RMA DB insert error: {e}")
@@ -189,13 +249,39 @@ def get_shipment_count() -> int:
         release_connection(conn)
 
 
-def insert_claim_details(rows: list[dict], source_file: str) -> int:
+def insert_claim_details(rows: list[dict], source_file: str, return_stats: bool = False):
     """
     Bulk-insert claim detail rows using execute_values (10-50x faster).
     Uses ON CONFLICT for dedup. Returns number of rows inserted.
     """
     if not rows:
-        return 0
+        stats = {
+            "parsed_rows": 0,
+            "unique_rows": 0,
+            "inserted_rows": 0,
+            "updated_rows": 0,
+            "duplicate_rows_in_file": 0,
+        }
+        return stats if return_stats else 0
+
+    # Deduplicate rows by unique key BEFORE inserting to avoid
+    # "ON CONFLICT DO UPDATE cannot affect row a second time" error.
+    # Keep last occurrence (most complete data).
+    deduped = {}
+    for row in rows:
+        key = (
+            row.get("claim_date"),
+            row.get("order_id") or "",
+            row.get("sscc18") or "",
+            row.get("claim_amount"),
+        )
+        deduped[key] = row
+    unique_rows = list(deduped.values())
+    duplicate_rows_in_file = len(rows) - len(unique_rows)
+    logger.info(
+        f"Deduped {len(rows)} → {len(unique_rows)} unique claim rows "
+        f"(duplicates inside file: {duplicate_rows_in_file})"
+    )
 
     conn = get_connection()
     try:
@@ -208,17 +294,84 @@ def insert_claim_details(rows: list[dict], source_file: str) -> int:
                     row.get("claim_amount"),
                     row.get("claim_type"),
                     row.get("carrier_bp"),
+                    # Schema v2 fields
+                    row.get("rma_status"),
+                    row.get("rma_date"),
+                    row.get("doc_type"),
+                    row.get("return_doc_type"),
+                    row.get("rma_order_number"),
+                    row.get("po_number"),
+                    row.get("order_type"),
+                    row.get("reference_number_qualifier"),
+                    row.get("bol_number"),
+                    row.get("original_line_number"),
+                    row.get("line_number"),
+                    row.get("returned_material_status"),
+                    row.get("contact_name"),
+                    row.get("description"),
+                    row.get("address_number"),
+                    row.get("address_name"),
+                    row.get("ship_to_number"),
+                    row.get("ship_to_name"),
+                    row.get("item_number"),
+                    row.get("unit_of_measure"),
+                    row.get("quantity"),
+                    row.get("reason_code"),
+                    row.get("reason_text"),
+                    row.get("branch_code"),
+                    row.get("branch"),
+                    row.get("business_unit_code"),
+                    row.get("business_unit"),
+                    row.get("serial_number_lot"),
+                    row.get("lot_serial_number"),
                 )
-                for row in rows
+                for row in unique_rows
             ]
             count_before = _count_table(cur, "claim_details")
             psycopg2.extras.execute_values(
                 cur,
                 """
                 INSERT INTO claim_details
-                    (claim_date, order_id, sscc18, claim_amount, claim_type, carrier_bp)
+                    (claim_date, order_id, sscc18, claim_amount, claim_type, carrier_bp,
+                     rma_status, rma_date, doc_type, return_doc_type, rma_order_number, po_number,
+                     order_type, reference_number_qualifier, bol_number, original_line_number,
+                     line_number, returned_material_status, contact_name, description,
+                     address_number, address_name, ship_to_number, ship_to_name,
+                     item_number, unit_of_measure, quantity, reason_code, reason_text,
+                     branch_code, branch, business_unit_code, business_unit,
+                     serial_number_lot, lot_serial_number)
                 VALUES %s
-                ON CONFLICT (claim_date, order_id, sscc18, claim_amount) DO NOTHING
+                ON CONFLICT (claim_date, COALESCE(order_id, ''), COALESCE(sscc18, ''), claim_amount)
+                DO UPDATE SET
+                    rma_status       = COALESCE(EXCLUDED.rma_status, claim_details.rma_status),
+                    rma_date         = COALESCE(EXCLUDED.rma_date, claim_details.rma_date),
+                    doc_type         = COALESCE(EXCLUDED.doc_type, claim_details.doc_type),
+                    return_doc_type  = COALESCE(EXCLUDED.return_doc_type, claim_details.return_doc_type),
+                    rma_order_number = COALESCE(EXCLUDED.rma_order_number, claim_details.rma_order_number),
+                    po_number        = COALESCE(EXCLUDED.po_number, claim_details.po_number),
+                    order_type       = COALESCE(EXCLUDED.order_type, claim_details.order_type),
+                    reference_number_qualifier = COALESCE(EXCLUDED.reference_number_qualifier, claim_details.reference_number_qualifier),
+                    bol_number       = COALESCE(EXCLUDED.bol_number, claim_details.bol_number),
+                    original_line_number = COALESCE(EXCLUDED.original_line_number, claim_details.original_line_number),
+                    line_number      = COALESCE(EXCLUDED.line_number, claim_details.line_number),
+                    returned_material_status = COALESCE(EXCLUDED.returned_material_status, claim_details.returned_material_status),
+                    contact_name     = COALESCE(EXCLUDED.contact_name, claim_details.contact_name),
+                    description      = COALESCE(EXCLUDED.description, claim_details.description),
+                    address_number   = COALESCE(EXCLUDED.address_number, claim_details.address_number),
+                    address_name     = COALESCE(EXCLUDED.address_name, claim_details.address_name),
+                    ship_to_number   = COALESCE(EXCLUDED.ship_to_number, claim_details.ship_to_number),
+                    ship_to_name     = COALESCE(EXCLUDED.ship_to_name, claim_details.ship_to_name),
+                    item_number      = COALESCE(EXCLUDED.item_number, claim_details.item_number),
+                    unit_of_measure  = COALESCE(EXCLUDED.unit_of_measure, claim_details.unit_of_measure),
+                    quantity         = COALESCE(EXCLUDED.quantity, claim_details.quantity),
+                    reason_code      = COALESCE(EXCLUDED.reason_code, claim_details.reason_code),
+                    reason_text      = COALESCE(EXCLUDED.reason_text, claim_details.reason_text),
+                    branch_code      = COALESCE(EXCLUDED.branch_code, claim_details.branch_code),
+                    branch           = COALESCE(EXCLUDED.branch, claim_details.branch),
+                    business_unit_code = COALESCE(EXCLUDED.business_unit_code, claim_details.business_unit_code),
+                    business_unit    = COALESCE(EXCLUDED.business_unit, claim_details.business_unit),
+                    serial_number_lot = COALESCE(EXCLUDED.serial_number_lot, claim_details.serial_number_lot),
+                    lot_serial_number = COALESCE(EXCLUDED.lot_serial_number, claim_details.lot_serial_number)
                 """,
                 values,
                 page_size=1000,
@@ -226,8 +379,19 @@ def insert_claim_details(rows: list[dict], source_file: str) -> int:
             count_after = _count_table(cur, "claim_details")
             inserted = count_after - count_before
         conn.commit()
-        logger.info(f"Bulk inserted {inserted}/{len(rows)} claim detail rows from '{source_file}' (duplicates skipped)")
-        return inserted
+        updated = max(len(unique_rows) - inserted, 0)
+        stats = {
+            "parsed_rows": len(rows),
+            "unique_rows": len(unique_rows),
+            "inserted_rows": inserted,
+            "updated_rows": updated,
+            "duplicate_rows_in_file": duplicate_rows_in_file,
+        }
+        logger.info(
+            f"Bulk upserted {len(rows)} claim detail rows from '{source_file}' "
+            f"({inserted} new, {updated} updated, {duplicate_rows_in_file} duplicate rows inside file)"
+        )
+        return stats if return_stats else inserted
     except Exception as e:
         conn.rollback()
         logger.error(f"Claim details DB insert error: {e}")
@@ -259,7 +423,7 @@ def rebuild_daily_history():
                 FROM (
                     SELECT
                         DATE(claim_date) AS claim_day,
-                        ABS(SUM(claim_amount)) AS daily_total,
+                        SUM(ABS(claim_amount)) AS daily_total,
                         COUNT(*) AS daily_count
                     FROM claim_details
                     GROUP BY DATE(claim_date)

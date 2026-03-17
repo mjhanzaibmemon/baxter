@@ -16,7 +16,7 @@ Amazon RDS PostgreSQL  ←──── ON CONFLICT DO NOTHING
        │
        ▼
   Grafana Dashboards
-  (4 dashboards, auto-provisioned)
+  (3 dashboards, auto-provisioned)
 ```
 
 ## Quick Start (Local Demo)
@@ -54,7 +54,7 @@ docker exec baxter_ingestor python seed_data.py
 ### 5. Open Grafana
 - URL: http://localhost:3000
 - Login: `admin` / `admin123`
-- All 4 dashboards auto-load on first start.
+ All 3 dashboards auto-load on first start.
 
 ---
 
@@ -62,10 +62,9 @@ docker exec baxter_ingestor python seed_data.py
 
 | # | Name | Description |
 |---|------|-------------|
-| 1 | Volume Over Time | Hourly/daily shipment counts |
-| 2 | Shipment & Order Breakdown | Carrier SCAC distribution + table |
-| 3 | Data Quality | Missing PRO_NUMBER gauge + trend |
-| 4 | Cost Savings | RMA credit recovery by carrier |
+ | 1 | Volume Over Time | Hourly/daily shipment counts |
+ | 2 | Shipment & Order Breakdown | Carrier SCAC distribution + table |
+ | 3 | Claim Validation | Claim-side validation and detail views |
 
 ---
 

@@ -4,42 +4,12 @@
     "annotations": {
         "list": [
             {
-                "builtIn": 1,
-                "datasource": {
-                    "type": "grafana",
-                    "uid": "-- Grafana --"
-                },
+                "datasource": { "type": "datasource", "uid": "-- Grafana --" },
                 "enable": true,
-                "hide": true,
+                "hide": false,
                 "iconColor": "rgba(0, 211, 255, 1)",
-                "name": "Annotations & Alerts",
-                "type": "dashboard"
-            },
-            {
-                "datasource": {
-                    "type": "postgres",
-                    "uid": "${DS_POSTGRESQL}"
-                },
-                "enable": true,
-                "iconColor": "rgba(242, 135, 10, 0.2)",
-                "name": "Before Scanning Region",
-                "rawQuery": "SELECT '2024-03-01'::timestamp AS time, '2024-05-01'::timestamp AS timeEnd, 'Before Scanning' AS text",
-                "target": {
-                    "limit": 100,
-                    "matchAny": false,
-                    "tags": [],
-                    "type": "dashboard"
-                }
-            },
-            {
-                "datasource": {
-                    "type": "postgres",
-                    "uid": "${DS_POSTGRESQL}"
-                },
-                "enable": true,
-                "iconColor": "rgba(115, 191, 105, 0.2)",
-                "name": "After Scanning Region",
-                "rawQuery": "SELECT '2024-05-01'::timestamp AS time, '2025-01-01'::timestamp AS timeEnd, 'May 1 2024' AS text",
+                "name": "Barcode Validation Implementation",
+                "type": "dashboard",
                 "target": {
                     "limit": 100,
                     "matchAny": false,
@@ -49,319 +19,434 @@
             }
         ]
     },
-    "description": "Barcode Validation & Claims Dashboard — Search by Order ID or SSCC18, view scanned barcodes, and track cost savings before vs after barcode scanning",
+    "description": "Barcode Validation & Claims Dashboard — KPIs, daily scans, claim trends, and detailed logs",
     "editable": true,
     "graphTooltip": 1,
     "id": null,
     "links": [],
     "panels": [
         {
-            "datasource": {
-                "type": "postgres",
-                "uid": "${DS_POSTGRESQL}"
-            },
-            "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Validation Status"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-text"
-                            },
-                            {
-                                "id": "mappings",
-                                "value": [
-                                    {
-                                        "options": {
-                                            "Valid": {
-                                                "color": "green",
-                                                "index": 0,
-                                                "text": "✓ Valid"
-                                            },
-                                            "Invalid": {
-                                                "color": "red",
-                                                "index": 1,
-                                                "text": "✗ Invalid"
-                                            }
-                                        },
-                                        "type": "value"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            "gridPos": {
-                "h": 17,
-                "w": 12,
-                "x": 0,
-                "y": 0
-            },
-            "id": 1,
-            "options": {
-                "footer": {
-                    "show": false
-                },
-                "showHeader": true,
-                "sortBy": [
-                    {
-                        "desc": true,
-                        "displayName": "Timestamp"
-                    }
-                ]
-            },
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "postgres",
-                        "uid": "${DS_POSTGRESQL}"
-                    },
-                    "format": "table",
-                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN pro_number IS NOT NULL THEN 'Valid' ELSE 'Valid' END AS \"Validation Status\"\nFROM shipments\nWHERE 1=1\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\nORDER BY appointment_date DESC\nLIMIT 100",
-                    "refId": "A"
-                }
-            ],
-            "title": "Scanned Barcodes",
-            "transformations": [],
-            "type": "table"
-        },
-        {
-            "datasource": {
-                "type": "postgres",
-                "uid": "${DS_POSTGRESQL}"
-            },
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 4, "x": 0, "y": 0 },
+            "id": 10,
+            "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT SUM(ABS(claim_amount)) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                "refId": "A"
+            }],
+            "title": "Total Claim $",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 4, "x": 4, "y": 0 },
+            "id": 11,
+            "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT COUNT(*) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                "refId": "A"
+            }],
+            "title": "Total Claim Count",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] },
+                    "decimals": 1,
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 4, "x": 8, "y": 0 },
+            "id": 12,
+            "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT ROUND(CAST(c.cnt AS numeric) / NULLIF(s.cnt, 0) * 1000, 1) AS value FROM (SELECT COUNT(*) AS cnt FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)) c, (SELECT COUNT(*) AS cnt FROM shipments WHERE $__timeFilter(appointment_date)) s",
+                "refId": "A"
+            }],
+            "title": "Claims per 1,000 Scans",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 4, "x": 12, "y": 0 },
+            "id": 13,
+            "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                "refId": "A"
+            }],
+            "title": "Total Barcode Scans",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "#56A64B", "value": null }] },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 4, "x": 16, "y": 0 },
+            "id": 30,
+            "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT COUNT(DISTINCT scac) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                "refId": "A"
+            }],
+            "title": "Unique Carriers",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "#C4162A", "value": null }] },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 4, "x": 20, "y": 0 },
+            "id": 31,
+            "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT COUNT(DISTINCT order_id) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                "refId": "A"
+            }],
+            "title": "Unique Orders",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "#3274D9", "mode": "fixed" },
                     "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 15,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "auto",
-                        "spanNulls": false
+                        "fillOpacity": 80, "lineWidth": 0, "spanNulls": false,
+                        "drawStyle": "bars", "barAlignment": 0, "gradientMode": "none",
+                        "showPoints": "never", "axisCenteredZero": false, "axisLabel": "Scans"
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 14, "w": 12, "x": 0, "y": 5 },
+            "id": 1,
+            "options": {
+                "legend": { "displayMode": "list", "placement": "bottom" },
+                "tooltip": { "mode": "single" }
+            },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "time_series",
+                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date,\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n)\nSELECT\n  ds.day::timestamp as time,\n  COUNT(s.id) as \"Daily Barcode Scans\"\nFROM date_series ds\nLEFT JOIN shipments s ON s.appointment_date::date = ds.day\nGROUP BY ds.day\nORDER BY ds.day",
+                "refId": "A"
+            }],
+            "title": "Daily Barcode Scans",
+            "type": "timeseries"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "fillOpacity": 10, "lineWidth": 2, "spanNulls": false,
+                        "drawStyle": "line", "showPoints": "never"
                     },
                     "unit": "currencyUSD"
                 },
                 "overrides": [
                     {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Total Claims $"
-                        },
+                        "matcher": { "id": "byName", "options": "Claims $" },
                         "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#F2870A",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 30
-                            }
+                            { "id": "color", "value": { "fixedColor": "#F2870A", "mode": "fixed" } },
+                            { "id": "custom.fillOpacity", "value": 15 },
+                            { "id": "custom.lineWidth", "value": 2 }
                         ]
                     },
                     {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "7-Day Moving Avg"
-                        },
+                        "matcher": { "id": "byName", "options": "7-Day Moving Avg" },
                         "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FADE2A",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.showPoints",
-                                "value": "always"
-                            },
-                            {
-                                "id": "custom.lineWidth",
-                                "value": 2
-                            },
-                            {
-                                "id": "custom.lineStyle",
-                                "value": {
-                                    "dash": [
-                                        8,
-                                        4
-                                    ],
-                                    "fill": "dash"
-                                }
-                            }
+                            { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } },
+                            { "id": "custom.lineWidth", "value": 2 },
+                            { "id": "custom.lineStyle", "value": { "dash": [8, 4], "fill": "dash" } },
+                            { "id": "custom.fillOpacity", "value": 0 }
                         ]
                     },
                     {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Reduction Text"
-                        },
+                        "matcher": { "id": "byName", "options": "Claim Count" },
                         "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.drawStyle",
-                                "value": "points"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 0
-                            },
-                            {
-                                "id": "custom.hideFrom",
-                                "value": {
-                                    "legend": true,
-                                    "tooltip": true,
-                                    "viz": false
-                                }
-                            },
-                            {
-                                "id": "custom.showPoints",
-                                "value": "never"
-                            },
-                            {
-                                "id": "mappings",
-                                "value": []
-                            },
-                            {
-                                "id": "custom.axisPlacement",
-                                "value": "hidden"
-                            },
-                            {
-                                "id": "mappings",
-                                "value": [
-                                    {
-                                        "options": {
-                                            "1200": {
-                                                "color": "green",
-                                                "index": 0,
-                                                "text": "-79.3%"
-                                            }
-                                        },
-                                        "type": "value"
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-text"
-                            }
+                            { "id": "color", "value": { "fixedColor": "#8AB8FF", "mode": "fixed" } },
+                            { "id": "custom.drawStyle", "value": "bars" },
+                            { "id": "custom.fillOpacity", "value": 40 },
+                            { "id": "custom.lineWidth", "value": 0 },
+                            { "id": "unit", "value": "short" },
+                            { "id": "custom.axisPlacement", "value": "right" },
+                            { "id": "custom.axisLabel", "value": "Claim Count" }
                         ]
                     }
                 ]
             },
-            "gridPos": {
-                "h": 17,
-                "w": 12,
-                "x": 12,
-                "y": 0
-            },
+            "gridPos": { "h": 14, "w": 12, "x": 12, "y": 5 },
             "id": 2,
             "options": {
-                "legend": {
-                    "displayMode": "list",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi"
-                },
-                "text": {
-                    "valueSize": 45
-                }
+                "legend": { "displayMode": "list", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
             },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "time_series",
+                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date - INTERVAL '6 days',\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n),\ndaily_claims AS (\n  SELECT\n    ds.day,\n    COALESCE(SUM(ABS(cd.claim_amount)), 0) as daily_total,\n    COUNT(cd.id) as claim_count\n  FROM date_series ds\n  LEFT JOIN claim_details cd ON cd.claim_date::date = ds.day\n    AND ('$__all' IN (${claim_type:singlequote}) OR cd.claim_type IN (${claim_type:singlequote}))\n    AND ('$__all' IN (${carrier:singlequote}) OR cd.carrier_bp IN (${carrier:singlequote}) OR cd.carrier_bp IS NULL)\n  GROUP BY ds.day\n)\nSELECT\n  day::timestamp as time,\n  daily_total as \"Claims $\",\n  AVG(daily_total) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as \"7-Day Moving Avg\",\n  claim_count as \"Claim Count\"\nFROM daily_claims\nWHERE day >= ($__timeFrom())::date\nORDER BY day",
+                "refId": "A"
+            }],
+            "title": "Claim Count vs Claims $",
+            "type": "timeseries"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "fillOpacity": 15, "lineWidth": 2, "spanNulls": false,
+                        "drawStyle": "line", "showPoints": "never",
+                        "axisLabel": "Claims / 1,000 Scans"
+                    },
+                    "unit": "short", "decimals": 1
+                },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "Claims per 1,000 Scans" },
+                        "properties": [
+                            { "id": "color", "value": { "fixedColor": "#56C0D8", "mode": "fixed" } },
+                            { "id": "custom.lineWidth", "value": 2 },
+                            { "id": "custom.fillOpacity", "value": 15 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "7-Day Avg Ratio" },
+                        "properties": [
+                            { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } },
+                            { "id": "custom.lineWidth", "value": 2 },
+                            { "id": "custom.lineStyle", "value": { "dash": [8, 4], "fill": "dash" } },
+                            { "id": "custom.fillOpacity", "value": 0 }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": { "h": 13, "w": 14, "x": 0, "y": 19 },
+            "id": 20,
+            "options": {
+                "legend": { "displayMode": "list", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "time_series",
+                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date - INTERVAL '6 days',\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n),\ndaily AS (\n  SELECT\n    ds.day,\n    COUNT(DISTINCT s.id) as scans,\n    COUNT(DISTINCT cd.id) as claims\n  FROM date_series ds\n  LEFT JOIN shipments s ON s.appointment_date::date = ds.day\n  LEFT JOIN claim_details cd ON cd.claim_date::date = ds.day\n    AND ('$__all' IN (${claim_type:singlequote}) OR cd.claim_type IN (${claim_type:singlequote}))\n    AND ('$__all' IN (${carrier:singlequote}) OR cd.carrier_bp IN (${carrier:singlequote}) OR cd.carrier_bp IS NULL)\n  GROUP BY ds.day\n),\nratio AS (\n  SELECT day,\n    CASE WHEN scans > 0 THEN ROUND(claims::numeric / scans * 1000, 1) ELSE 0 END as ratio_val\n  FROM daily\n)\nSELECT\n  day::timestamp as time,\n  ratio_val as \"Claims per 1,000 Scans\",\n  AVG(ratio_val) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as \"7-Day Avg Ratio\"\nFROM ratio\nWHERE day >= ($__timeFrom())::date\nORDER BY day",
+                "refId": "A"
+            }],
+            "title": "Claims per 1,000 Barcode Scans",
+            "type": "timeseries"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [
+                        { "color": "red", "value": null },
+                        { "color": "orange", "value": 30 },
+                        { "color": "#73BF69", "value": 50 },
+                        { "color": "green", "value": 90 }
+                    ]},
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 10, "x": 14, "y": 19 },
+            "id": 21,
+            "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto", "justifyMode": "center" },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT (CURRENT_DATE - MAX(claim_date::date)) AS value FROM claim_details WHERE ABS(claim_amount) >= 10000 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                "refId": "A"
+            }],
+            "title": "Days Since Last $10k Claim",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "#F2495C", "mode": "fixed" },
+                    "noValue": "N/A"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 8, "w": 5, "x": 14, "y": 24 },
+            "id": 22,
+            "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "textMode": "value", "justifyMode": "center", "orientation": "vertical" },
             "targets": [
                 {
-                    "datasource": {
-                        "type": "postgres",
-                        "uid": "${DS_POSTGRESQL}"
-                    },
-                    "format": "time_series",
-                    "rawSql": "SELECT\n  claim_date::date::timestamp AS time,\n  SUM(ABS(claim_amount)) AS \"Total Claims $\",\n  AVG(SUM(ABS(claim_amount))) OVER (ORDER BY claim_date::date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS \"7-Day Moving Avg\"\nFROM claim_details\nWHERE 1=1\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\nGROUP BY claim_date::date\nORDER BY claim_date::date",
+                    "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                    "format": "table",
+                    "rawSql": "SELECT TO_CHAR(COUNT(*), 'FM99,999') || ' / ' || COUNT(DISTINCT claim_date::date) || ' Days' as \"Claims / Days\" FROM claim_details WHERE claim_date < '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
                     "refId": "A"
                 },
                 {
-                    "datasource": {
-                        "type": "postgres",
-                        "uid": "${DS_POSTGRESQL}"
-                    },
-                    "format": "time_series",
-                    "rawSql": "SELECT '2024-05-18'::timestamp AS time, 1200 AS \"Reduction Text\"",
+                    "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                    "format": "table",
+                    "rawSql": "SELECT COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::text || ' / ' || ROUND(100.0 * COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::numeric / NULLIF(COUNT(*), 0), 1)::text || '%' as \"$10k+ / %\" FROM claim_details WHERE claim_date < '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
                     "refId": "B"
                 }
             ],
-            "title": "Total Claims Before vs. After Barcode Scanning",
-            "type": "timeseries",
-            "transformations": []
+            "title": "Before Validation Claims",
+            "type": "stat"
         },
         {
-            "datasource": {
-                "type": "postgres",
-                "uid": "${DS_POSTGRESQL}"
-            },
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
             "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                    "color": { "fixedColor": "#73BF69", "mode": "fixed" },
+                    "noValue": "N/A"
+                },
                 "overrides": []
             },
-            "gridPos": {
-                "h": 12,
-                "w": 24,
-                "x": 0,
-                "y": 17
-            },
-            "id": 3,
-            "options": {
-                "footer": {
-                    "show": false
-                },
-                "showHeader": true,
-                "sortBy": [
-                    {
-                        "desc": true,
-                        "displayName": "Claim Date"
-                    }
-                ]
-            },
+            "gridPos": { "h": 8, "w": 5, "x": 19, "y": 24 },
+            "id": 23,
+            "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "textMode": "value", "justifyMode": "center", "orientation": "vertical" },
             "targets": [
                 {
-                    "datasource": {
-                        "type": "postgres",
-                        "uid": "${DS_POSTGRESQL}"
-                    },
+                    "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                     "format": "table",
-                    "rawSql": "SELECT\n  TO_CHAR(claim_date, 'Mon DD, YYYY') AS \"Claim Date\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  claim_amount AS \"Claim Amount\",\n  claim_type AS \"Claim Type\",\n  carrier_bp AS \"Carrier\"\nFROM claim_details\nWHERE 1=1\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}))\nORDER BY claim_date DESC\nLIMIT 500",
+                    "rawSql": "SELECT TO_CHAR(COUNT(*), 'FM99,999') || ' / ' || COUNT(DISTINCT claim_date::date) || ' Days' as \"Claims / Days\" FROM claim_details WHERE claim_date >= '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
                     "refId": "A"
+                },
+                {
+                    "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                    "format": "table",
+                    "rawSql": "SELECT COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::text || ' / ' || ROUND(100.0 * COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::numeric / NULLIF(COUNT(*), 0), 1)::text || '%' as \"$10k+ / %\" FROM claim_details WHERE claim_date >= '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                    "refId": "B"
                 }
             ],
+            "title": "After Validation Claims",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": { "custom": { "align": "auto", "filterable": true } },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "Validation Status" },
+                        "properties": [
+                            { "id": "custom.displayMode", "value": "color-text" },
+                            { "id": "mappings", "value": [{ "options": { "Valid": { "color": "green", "index": 0, "text": "\u2714 Valid" } }, "type": "value" }] }
+                        ]
+                    },
+                    { "matcher": { "id": "byName", "options": "Claim Date" }, "properties": [{ "id": "custom.width", "value": 140 }] },
+                    { "matcher": { "id": "byName", "options": "Order ID" }, "properties": [{ "id": "custom.width", "value": 160 }] },
+                    { "matcher": { "id": "byName", "options": "SSCC18" }, "properties": [{ "id": "custom.width", "value": 200 }] }
+                ]
+            },
+            "gridPos": { "h": 14, "w": 12, "x": 0, "y": 32 },
+            "id": 3,
+            "options": {
+                "footer": { "show": true, "countRows": true, "reducer": ["count"] },
+                "showHeader": true,
+                "sortBy": [{ "desc": true, "displayName": "Claim Date" }]
+            },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT\n  TO_CHAR(claim_date, 'Mon DD, YYYY') AS \"Claim Date\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN EXISTS (SELECT 1 FROM shipments s WHERE s.sscc18 = c.sscc18) THEN '\u2713 Valid' ELSE '\u2717 Not Scanned' END AS \"Validation Status\"\nFROM claim_details c\nWHERE $__timeFilter(claim_date)\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)\nORDER BY claim_date DESC\nLIMIT 500",
+                "refId": "A"
+            }],
             "title": "Customer Claim Log",
+            "type": "table"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": { "custom": { "align": "auto", "filterable": true } },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "Validation Status" },
+                        "properties": [
+                            { "id": "custom.displayMode", "value": "color-text" },
+                            { "id": "mappings", "value": [{ "options": { "Valid": { "color": "green", "index": 0, "text": "\u2714 Valid" } }, "type": "value" }] }
+                        ]
+                    },
+                    { "matcher": { "id": "byName", "options": "Timestamp" }, "properties": [{ "id": "custom.width", "value": 180 }] },
+                    { "matcher": { "id": "byName", "options": "Order ID" }, "properties": [{ "id": "custom.width", "value": 160 }] },
+                    { "matcher": { "id": "byName", "options": "SSCC18" }, "properties": [{ "id": "custom.width", "value": 200 }] }
+                ]
+            },
+            "gridPos": { "h": 14, "w": 12, "x": 12, "y": 32 },
+            "id": 4,
+            "options": {
+                "footer": { "show": true, "countRows": true, "reducer": ["count"] },
+                "showHeader": true,
+                "sortBy": [{ "desc": true, "displayName": "Timestamp" }]
+            },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN pro_number IS NOT NULL AND pro_number != '' THEN '\u2713 Valid' ELSE '\u2717 Missing PRO' END AS \"Validation Status\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\nORDER BY appointment_date DESC\nLIMIT 500",
+                "refId": "A"
+            }],
+            "title": "Scanned Barcode Log",
             "type": "table"
         }
     ],
     "refresh": "5m",
     "schemaVersion": 38,
-    "tags": [
-        "baxter",
-        "barcode",
-        "validation"
-    ],
+    "tags": ["baxter", "barcode", "validation", "volume"],
     "templating": {
         "list": [
             {
@@ -376,55 +461,28 @@
                 "type": "datasource"
             },
             {
-                "current": {
-                    "selected": false,
-                    "text": "",
-                    "value": ""
-                },
+                "current": { "selected": false, "text": "", "value": "" },
                 "hide": 0,
                 "label": "Order ID",
                 "name": "order_id",
-                "options": [
-                    {
-                        "selected": true,
-                        "text": "",
-                        "value": ""
-                    }
-                ],
+                "options": [{ "selected": true, "text": "", "value": "" }],
                 "query": "",
                 "skipUrlSync": false,
                 "type": "textbox"
             },
             {
-                "current": {
-                    "selected": false,
-                    "text": "",
-                    "value": ""
-                },
+                "current": { "selected": false, "text": "", "value": "" },
                 "hide": 0,
                 "label": "SSCC18",
                 "name": "sscc18",
-                "options": [
-                    {
-                        "selected": true,
-                        "text": "",
-                        "value": ""
-                    }
-                ],
+                "options": [{ "selected": true, "text": "", "value": "" }],
                 "query": "",
                 "skipUrlSync": false,
                 "type": "textbox"
             },
             {
-                "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": "$__all"
-                },
-                "datasource": {
-                    "type": "postgres",
-                    "uid": "${DS_POSTGRESQL}"
-                },
+                "current": { "selected": true, "text": "All", "value": "$__all" },
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
                 "hide": 0,
                 "includeAll": true,
@@ -440,15 +498,8 @@
                 "type": "query"
             },
             {
-                "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": "$__all"
-                },
-                "datasource": {
-                    "type": "postgres",
-                    "uid": "${DS_POSTGRESQL}"
-                },
+                "current": { "selected": true, "text": "All", "value": "$__all" },
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "definition": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
                 "hide": 0,
                 "includeAll": true,
@@ -471,7 +522,7 @@
     },
     "timepicker": {},
     "timezone": "browser",
-    "title": "2 - Barcode Validation & Claims Dashboard",
+    "title": "Barcode Validation & Claims Dashboard",
     "uid": "baxter-barcode",
     "version": 1
 }

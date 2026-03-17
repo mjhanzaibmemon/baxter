@@ -2,8 +2,8 @@
 graph_api.py — Microsoft Graph API integration for reading Outlook emails.
 
 Supports two modes:
-  DEMO_MODE=true   → reads .xlsx files from local DEMO_EXCEL_DIR folder
-  DEMO_MODE=false  → authenticates via MSAL and polls real mailbox
+    DEMO_MODE=true   → reads .xlsx/.csv files from local DEMO_EXCEL_DIR folder
+    DEMO_MODE=false  → authenticates via MSAL and polls real mailbox
 """
 import base64
 import logging
@@ -72,8 +72,8 @@ def _get_allowed_keywords() -> list[str]:
     return [k.strip().lower() for k in keywords.split(",") if k.strip()]
 
 
-def _get_unread_excel_emails(token: str, mailbox: str) -> list[dict]:
-    """Fetch unread emails with .xlsx attachments from the mailbox."""
+def _get_unread_attachment_emails(token: str, mailbox: str) -> list[dict]:
+    """Fetch unread emails with supported attachments from the mailbox."""
     session = _get_session()
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -105,9 +105,9 @@ def _get_unread_excel_emails(token: str, mailbox: str) -> list[dict]:
     return emails
 
 
-def _get_excel_attachments(token: str, mailbox: str, message_id: str) -> list[tuple]:
+def _get_supported_attachments(token: str, mailbox: str, message_id: str) -> list[tuple]:
     """
-    Download .xlsx attachments from a specific email.
+    Download supported attachments from a specific email.
     Returns list of (filename, bytes_content) tuples.
     Only downloads files matching ALLOWED_FILE_KEYWORDS if set.
     """
@@ -123,12 +123,12 @@ def _get_excel_attachments(token: str, mailbox: str, message_id: str) -> list[tu
     attachments = []
     for att in resp.json().get("value", []):
         filename = att.get("name", "")
-        if not filename.lower().endswith(".xlsx"):
+        filename_lower = filename.lower()
+        if not (filename_lower.endswith(".xlsx") or filename_lower.endswith(".csv")):
             continue
         
         # Filter by filename keywords if ALLOWED_FILE_KEYWORDS is set
         if allowed_keywords:
-            filename_lower = filename.lower()
             if not any(kw in filename_lower for kw in allowed_keywords):
                 logger.info(f"  ↳ Skipping file {filename} (no matching keyword)")
                 continue
@@ -154,7 +154,7 @@ def poll_mailbox() -> list[tuple]:
     """
     Main entry point. Returns list of (filename, bytes, email_id) tuples.
 
-    In DEMO_MODE: reads Excel files from DEMO_EXCEL_DIR.
+    In DEMO_MODE: reads local sample files from DEMO_EXCEL_DIR.
     In real mode:  polls Microsoft Graph API.
     """
     demo_mode = os.getenv("DEMO_MODE", "true").lower() == "true"
@@ -166,38 +166,39 @@ def poll_mailbox() -> list[tuple]:
 
 
 def _poll_demo_folder() -> list[tuple]:
-    """Read Excel files from local demo folder (for demo recording)."""
+    """Read supported sample files from local demo folder (for demo recording)."""
     excel_dir = Path(os.getenv("DEMO_EXCEL_DIR", "/app/sample_data"))
-    logger.info(f"[DEMO MODE] Reading Excel files from: {excel_dir}")
+    logger.info(f"[DEMO MODE] Reading sample files from: {excel_dir}")
 
     results = []
     if not excel_dir.exists():
         logger.warning(f"[DEMO MODE] Directory not found: {excel_dir}")
         return results
 
-    for xlsx_file in sorted(excel_dir.glob("*.xlsx")):
-        file_bytes = xlsx_file.read_bytes()
-        results.append((xlsx_file.name, file_bytes, f"demo::{xlsx_file.name}"))
-        logger.info(f"[DEMO MODE] Found file: {xlsx_file.name} ({len(file_bytes):,} bytes)")
+    supported_files = sorted(excel_dir.glob("*.xlsx")) + sorted(excel_dir.glob("*.csv"))
+    for sample_file in supported_files:
+        file_bytes = sample_file.read_bytes()
+        results.append((sample_file.name, file_bytes, f"demo::{sample_file.name}"))
+        logger.info(f"[DEMO MODE] Found file: {sample_file.name} ({len(file_bytes):,} bytes)")
 
     return results
 
 
 def _poll_graph_api() -> list[tuple]:
-    """Poll real Microsoft Graph API mailbox for new Excel attachments."""
+    """Poll real Microsoft Graph API mailbox for new supported attachments."""
     mailbox = os.getenv("MAILBOX_EMAIL")
     if not mailbox:
         raise ValueError("MAILBOX_EMAIL env var is required for real Graph API mode")
 
     logger.info(f"[GRAPH API] Polling mailbox: {mailbox}")
     token = _get_access_token()
-    emails = _get_unread_excel_emails(token, mailbox)
+    emails = _get_unread_attachment_emails(token, mailbox)
     logger.info(f"[GRAPH API] Found {len(emails)} unread emails with attachments")
 
     results = []
     for email in emails:
         msg_id = email["id"]
-        attachments = _get_excel_attachments(token, mailbox, msg_id)
+        attachments = _get_supported_attachments(token, mailbox, msg_id)
         for fname, fbytes in attachments:
             results.append((fname, fbytes, msg_id))
         if attachments:
