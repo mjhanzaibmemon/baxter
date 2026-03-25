@@ -51,7 +51,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "time_series",
-                    "rawSql": "SELECT\n  date_trunc('hour', appointment_date) AS time,\n  COUNT(*) AS shipments\nFROM shipments\nWHERE $__timeFilter(appointment_date)\nGROUP BY 1\nORDER BY 1",
+                    "rawSql": "SELECT\n  date_trunc('hour', appointment_date) AS time,\n  COUNT(*) AS shipments\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nGROUP BY 1\nORDER BY 1",
                     "refId": "A"
                 }
             ],
@@ -95,7 +95,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                    "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
                     "refId": "A"
                 }
             ],
@@ -136,7 +136,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT COUNT(DISTINCT scac) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                    "rawSql": "SELECT COUNT(DISTINCT scac) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
                     "refId": "A"
                 }
             ],
@@ -177,7 +177,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT COUNT(DISTINCT order_id) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                    "rawSql": "SELECT COUNT(DISTINCT order_id) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
                     "refId": "A"
                 }
             ],
@@ -220,7 +220,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT\n  date_trunc('day', appointment_date) AS day,\n  COUNT(*) AS shipments\nFROM shipments\nWHERE $__timeFilter(appointment_date)\nGROUP BY 1\nORDER BY 1",
+                    "rawSql": "SELECT\n  date_trunc('day', appointment_date) AS day,\n  COUNT(*) AS shipments\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nGROUP BY 1\nORDER BY 1",
                     "refId": "A"
                 }
             ],
@@ -342,7 +342,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Appointment Date\",\n  COALESCE(pro_number, '-') AS \"PRO Number\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  order_id AS \"Order ID\",\n  shipment_id AS \"Shipment ID\",\n  COALESCE(source_file, '-') AS \"Source File\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\nORDER BY appointment_date DESC\nLIMIT 500",
+                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Appointment Date\",\n  COALESCE(pro_number, '-') AS \"PRO Number\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  order_id AS \"Order ID\",\n  shipment_id AS \"Shipment ID\",\n  COALESCE(source_file, '-') AS \"Source File\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nORDER BY appointment_date DESC\nLIMIT 500",
                     "refId": "A"
                 }
             ],
@@ -368,6 +368,23 @@
                 "query": "postgres",
                 "refresh": 1,
                 "type": "datasource"
+            },
+            {
+                "current": { "selected": true, "text": ["FXFE","HSNR","HSND","HSNC","HSNN","HSNA"], "value": ["FXFE","HSNR","HSND","HSNC","HSNN","HSNA"] },
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "definition": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Carrier",
+                "multi": true,
+                "name": "carrier",
+                "options": [],
+                "query": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
             }
         ]
     },

@@ -41,7 +41,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT SUM(ABS(claim_amount)) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                "rawSql": "SELECT SUM(ABS(claim_amount)) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                 "refId": "A"
             }],
             "title": "Total Claim $",
@@ -63,7 +63,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT COUNT(*) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                "rawSql": "SELECT COUNT(*) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                 "refId": "A"
             }],
             "title": "Total Claim Count",
@@ -86,7 +86,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT ROUND(CAST(c.cnt AS numeric) / NULLIF(s.cnt, 0) * 1000, 1) AS value FROM (SELECT COUNT(*) AS cnt FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)) c, (SELECT COUNT(*) AS cnt FROM shipments WHERE $__timeFilter(appointment_date)) s",
+                "rawSql": "SELECT ROUND(CAST(c.cnt AS numeric) / NULLIF(s.cnt, 0) * 1000, 1) AS value FROM (SELECT COUNT(*) AS cnt FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))) c, (SELECT COUNT(*) AS cnt FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))) s",
                 "refId": "A"
             }],
             "title": "Claims per 1,000 Scans",
@@ -108,7 +108,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
                 "refId": "A"
             }],
             "title": "Total Barcode Scans",
@@ -130,7 +130,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT COUNT(DISTINCT scac) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                "rawSql": "SELECT COUNT(DISTINCT scac) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
                 "refId": "A"
             }],
             "title": "Unique Carriers",
@@ -152,7 +152,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT COUNT(DISTINCT order_id) AS value FROM shipments WHERE $__timeFilter(appointment_date)",
+                "rawSql": "SELECT COUNT(DISTINCT order_id) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
                 "refId": "A"
             }],
             "title": "Unique Orders",
@@ -181,7 +181,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "time_series",
-                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date,\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n)\nSELECT\n  ds.day::timestamp as time,\n  COUNT(s.id) as \"Daily Barcode Scans\"\nFROM date_series ds\nLEFT JOIN shipments s ON s.appointment_date::date = ds.day\nGROUP BY ds.day\nORDER BY ds.day",
+                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date,\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n)\nSELECT\n  ds.day::timestamp as time,\n  COUNT(s.id) as \"Daily Barcode Scans\"\nFROM date_series ds\nLEFT JOIN shipments s ON s.appointment_date::date = ds.day\n \n  AND ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote}))\nGROUP BY ds.day\nORDER BY ds.day",
                 "refId": "A"
             }],
             "title": "Daily Barcode Scans",
@@ -239,7 +239,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "time_series",
-                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date - INTERVAL '6 days',\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n),\ndaily_claims AS (\n  SELECT\n    ds.day,\n    COALESCE(SUM(ABS(cd.claim_amount)), 0) as daily_total,\n    COUNT(cd.id) as claim_count\n  FROM date_series ds\n  LEFT JOIN claim_details cd ON cd.claim_date::date = ds.day\n    AND ('$__all' IN (${claim_type:singlequote}) OR cd.claim_type IN (${claim_type:singlequote}))\n    AND ('$__all' IN (${carrier:singlequote}) OR cd.carrier_bp IN (${carrier:singlequote}) OR cd.carrier_bp IS NULL)\n  GROUP BY ds.day\n)\nSELECT\n  day::timestamp as time,\n  daily_total as \"Claims $\",\n  AVG(daily_total) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as \"7-Day Moving Avg\",\n  claim_count as \"Claim Count\"\nFROM daily_claims\nWHERE day >= ($__timeFrom())::date\nORDER BY day",
+                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date - INTERVAL '6 days',\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n),\ndaily_claims AS (\n  SELECT\n    ds.day,\n    COALESCE(SUM(ABS(cd.claim_amount)), 0) as daily_total,\n    COUNT(cd.id) as claim_count\n  FROM date_series ds\n  LEFT JOIN claim_details cd ON cd.claim_date::date = ds.day\n    AND ('$__all' IN (${claim_type:singlequote}) OR cd.claim_type IN (${claim_type:singlequote}))\n\n  GROUP BY ds.day\n)\nSELECT\n  day::timestamp as time,\n  daily_total as \"Claims $\",\n  AVG(daily_total) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as \"7-Day Moving Avg\",\n  claim_count as \"Claim Count\"\nFROM daily_claims\nWHERE day >= ($__timeFrom())::date\nORDER BY day",
                 "refId": "A"
             }],
             "title": "Claim Count vs Claims $",
@@ -286,7 +286,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "time_series",
-                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date - INTERVAL '6 days',\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n),\ndaily AS (\n  SELECT\n    ds.day,\n    COUNT(DISTINCT s.id) as scans,\n    COUNT(DISTINCT cd.id) as claims\n  FROM date_series ds\n  LEFT JOIN shipments s ON s.appointment_date::date = ds.day\n  LEFT JOIN claim_details cd ON cd.claim_date::date = ds.day\n    AND ('$__all' IN (${claim_type:singlequote}) OR cd.claim_type IN (${claim_type:singlequote}))\n    AND ('$__all' IN (${carrier:singlequote}) OR cd.carrier_bp IN (${carrier:singlequote}) OR cd.carrier_bp IS NULL)\n  GROUP BY ds.day\n),\nratio AS (\n  SELECT day,\n    CASE WHEN scans > 0 THEN ROUND(claims::numeric / scans * 1000, 1) ELSE 0 END as ratio_val\n  FROM daily\n)\nSELECT\n  day::timestamp as time,\n  ratio_val as \"Claims per 1,000 Scans\",\n  AVG(ratio_val) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as \"7-Day Avg Ratio\"\nFROM ratio\nWHERE day >= ($__timeFrom())::date\nORDER BY day",
+                "rawSql": "WITH date_series AS (\n  SELECT d::date as day\n  FROM generate_series(\n    ($__timeFrom())::date - INTERVAL '6 days',\n    ($__timeTo())::date,\n    '1 day'::interval\n  ) d\n),\ndaily AS (\n  SELECT\n    ds.day,\n    COUNT(DISTINCT s.id) as scans,\n    COUNT(DISTINCT cd.id) as claims\n  FROM date_series ds\n  LEFT JOIN shipments s ON s.appointment_date::date = ds.day\n   \n    AND ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote}))\n  LEFT JOIN claim_details cd ON cd.claim_date::date = ds.day\n    AND ('$__all' IN (${claim_type:singlequote}) OR cd.claim_type IN (${claim_type:singlequote}))\n\n  GROUP BY ds.day\n),\nratio AS (\n  SELECT day,\n    CASE WHEN scans > 0 THEN ROUND(claims::numeric / scans * 1000, 1) ELSE 0 END as ratio_val\n  FROM daily\n)\nSELECT\n  day::timestamp as time,\n  ratio_val as \"Claims per 1,000 Scans\",\n  AVG(ratio_val) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as \"7-Day Avg Ratio\"\nFROM ratio\nWHERE day >= ($__timeFrom())::date\nORDER BY day",
                 "refId": "A"
             }],
             "title": "Claims per 1,000 Barcode Scans",
@@ -313,7 +313,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT (CURRENT_DATE - MAX(claim_date::date)) AS value FROM claim_details WHERE ABS(claim_amount) >= 10000 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                "rawSql": "SELECT (CURRENT_DATE - MAX(claim_date::date)) AS value FROM claim_details WHERE ABS(claim_amount) >= 10000 AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                 "refId": "A"
             }],
             "title": "Days Since Last $10k Claim",
@@ -335,13 +335,13 @@
                 {
                     "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                     "format": "table",
-                    "rawSql": "SELECT TO_CHAR(COUNT(*), 'FM99,999') || ' / ' || COUNT(DISTINCT claim_date::date) || ' Days' as \"Claims / Days\" FROM claim_details WHERE claim_date < '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                    "rawSql": "SELECT TO_CHAR(COUNT(*), 'FM99,999') || ' / ' || COUNT(DISTINCT claim_date::date) || ' Days' as \"Claims / Days\" FROM claim_details WHERE claim_date < '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                     "refId": "A"
                 },
                 {
                     "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                     "format": "table",
-                    "rawSql": "SELECT COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::text || ' / ' || ROUND(100.0 * COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::numeric / NULLIF(COUNT(*), 0), 1)::text || '%' as \"$10k+ / %\" FROM claim_details WHERE claim_date < '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                    "rawSql": "SELECT COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::text || ' / ' || ROUND(100.0 * COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::numeric / NULLIF(COUNT(*), 0), 1)::text || '%' as \"$10k+ / %\" FROM claim_details WHERE claim_date < '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                     "refId": "B"
                 }
             ],
@@ -364,13 +364,13 @@
                 {
                     "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                     "format": "table",
-                    "rawSql": "SELECT TO_CHAR(COUNT(*), 'FM99,999') || ' / ' || COUNT(DISTINCT claim_date::date) || ' Days' as \"Claims / Days\" FROM claim_details WHERE claim_date >= '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                    "rawSql": "SELECT TO_CHAR(COUNT(*), 'FM99,999') || ' / ' || COUNT(DISTINCT claim_date::date) || ' Days' as \"Claims / Days\" FROM claim_details WHERE claim_date >= '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                     "refId": "A"
                 },
                 {
                     "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                     "format": "table",
-                    "rawSql": "SELECT COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::text || ' / ' || ROUND(100.0 * COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::numeric / NULLIF(COUNT(*), 0), 1)::text || '%' as \"$10k+ / %\" FROM claim_details WHERE claim_date >= '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)",
+                    "rawSql": "SELECT COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::text || ' / ' || ROUND(100.0 * COUNT(CASE WHEN ABS(claim_amount) >= 10000 THEN 1 END)::numeric / NULLIF(COUNT(*), 0), 1)::text || '%' as \"$10k+ / %\" FROM claim_details WHERE claim_date >= '2025-05-01' AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))",
                     "refId": "B"
                 }
             ],
@@ -404,7 +404,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT\n  TO_CHAR(claim_date, 'Mon DD, YYYY') AS \"Claim Date\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN EXISTS (SELECT 1 FROM shipments s WHERE s.sscc18 = c.sscc18) THEN '\u2713 Valid' ELSE '\u2717 Not Scanned' END AS \"Validation Status\"\nFROM claim_details c\nWHERE $__timeFilter(claim_date)\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n  AND ('$__all' IN (${carrier:singlequote}) OR carrier_bp IN (${carrier:singlequote}) OR carrier_bp IS NULL)\nORDER BY claim_date DESC\nLIMIT 500",
+                "rawSql": "SELECT\n  TO_CHAR(claim_date, 'Mon DD, YYYY') AS \"Claim Date\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN EXISTS (SELECT 1 FROM shipments s WHERE s.sscc18 = c.sscc18) THEN '\u2713 Valid' ELSE '\u2717 Not Scanned' END AS \"Validation Status\"\nFROM claim_details c\nWHERE $__timeFilter(claim_date)\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\n\nORDER BY claim_date DESC\nLIMIT 500",
                 "refId": "A"
             }],
             "title": "Customer Claim Log",
@@ -437,7 +437,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  CASE WHEN pro_number IS NOT NULL AND pro_number != '' THEN '\u2713 Valid' ELSE '\u2717 Missing PRO' END AS \"Validation Status\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\nORDER BY appointment_date DESC\nLIMIT 500",
+                "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  pro_number AS \"PRO Number\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nORDER BY appointment_date DESC\nLIMIT 500",
                 "refId": "A"
             }],
             "title": "Scanned Barcode Log",
@@ -481,16 +481,16 @@
                 "type": "textbox"
             },
             {
-                "current": { "selected": true, "text": "All", "value": "$__all" },
+                "current": { "selected": true, "text": "SHORTAGE", "value": ["SHORTAGE"] },
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-                "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
+                "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL AND claim_type NOT ILIKE '%missing%pro%' ORDER BY claim_type",
                 "hide": 0,
                 "includeAll": true,
                 "label": "Claim Type",
                 "multi": true,
                 "name": "claim_type",
                 "options": [],
-                "query": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
+                "query": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL AND claim_type NOT ILIKE '%missing%pro%' ORDER BY claim_type",
                 "refresh": 1,
                 "regex": "",
                 "skipUrlSync": false,
@@ -498,16 +498,16 @@
                 "type": "query"
             },
             {
-                "current": { "selected": true, "text": "All", "value": "$__all" },
+                "current": { "selected": true, "text": ["FXFE","HSNR","HSND","HSNC","HSNN","HSNA"], "value": ["FXFE","HSNR","HSND","HSNC","HSNN","HSNA"] },
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-                "definition": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
+                "definition": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
                 "hide": 0,
                 "includeAll": true,
                 "label": "Carrier",
                 "multi": true,
                 "name": "carrier",
                 "options": [],
-                "query": "SELECT DISTINCT carrier_bp FROM claim_details WHERE carrier_bp IS NOT NULL ORDER BY carrier_bp",
+                "query": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
                 "refresh": 1,
                 "regex": "",
                 "skipUrlSync": false,
