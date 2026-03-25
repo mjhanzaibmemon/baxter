@@ -382,7 +382,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT COALESCE(item_number, 'Unknown') AS \"Item Number\",\n  ROUND(SUM(ABS(claim_amount))::numeric, 2) AS \"Claim $\"\nFROM claim_details\nWHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\nGROUP BY COALESCE(item_number, 'Unknown')\nORDER BY SUM(ABS(claim_amount)) DESC\nLIMIT 10",
+                "rawSql": "SELECT COALESCE(item_number, 'Unknown') AS \"Item Number\",\n  ROUND(SUM(ABS(claim_amount))::numeric, 2) AS \"Claim $\"\nFROM claim_details\nWHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\nAND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')\nAND item_number ~ '^[A-Za-z]'\nGROUP BY COALESCE(item_number, 'Unknown')\nORDER BY SUM(ABS(claim_amount)) DESC\nLIMIT 10",
                 "refId": "A"
             }],
             "title": "Claim $ by Item",
