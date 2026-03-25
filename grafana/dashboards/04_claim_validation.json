@@ -328,7 +328,7 @@
                 "tooltip": { "mode": "multi" },
                 "barWidth": 0.6,
                 "groupWidth": 0.7,
-                "orientation": "vertical",
+                "orientation": "horizontal",
                 "showValue": "auto",
                 "stacking": "none"
             },
