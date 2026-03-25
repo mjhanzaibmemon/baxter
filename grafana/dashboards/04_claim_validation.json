@@ -335,7 +335,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT COALESCE(c.item_number, 'Unknown') AS \"Item Number\",\n  COUNT(*) AS \"Claims\",\n  COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR ((c.sscc18 IS NULL OR c.sscc18='') AND c.order_id IS NOT NULL AND c.order_id <> '' AND s.order_id=c.order_id)))) AS \"Verified Claims\"\nFROM claim_details c\nWHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\nGROUP BY COALESCE(c.item_number, 'Unknown')\nORDER BY COUNT(*) DESC\nLIMIT 10",
+                "rawSql": "SELECT COALESCE(c.item_number, 'Unknown') AS \"Item Number\",\n  COUNT(*) AS \"Claims\",\n  COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR ((c.sscc18 IS NULL OR c.sscc18='') AND c.order_id IS NOT NULL AND c.order_id <> '' AND s.order_id=c.order_id)))) AS \"Verified Claims\"\nFROM claim_details c\nWHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote}))\nAND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')\nAND c.item_number ~ '^[A-Za-z]'\nGROUP BY COALESCE(c.item_number, 'Unknown')\nORDER BY COUNT(*) DESC\nLIMIT 10",
                 "refId": "A"
             }],
             "title": "Claims by Item",
