@@ -1,0 +1,269 @@
+[
+    {
+        "id": 328608022718,
+        "handle": "adidas",
+        "title": "Adidas",
+        "updated_at": "2026-01-01T16:37:44+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:55:49+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328608022718",
+        "image": {
+            "created_at": "2025-12-10T13:14:59+05:00",
+            "alt": null,
+            "width": 200,
+            "height": 200,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/IMG-20251129-WA0004.jpg?v=1765354499"
+        }
+    },
+    {
+        "id": 328607989950,
+        "handle": "asics",
+        "title": "Asics",
+        "updated_at": "2026-01-01T19:46:46+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:55:36+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328607989950",
+        "image": {
+            "created_at": "2025-12-10T13:14:39+05:00",
+            "alt": null,
+            "width": 200,
+            "height": 200,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/IMG-20251129-WA0007.jpg?v=1765354479"
+        }
+    },
+    {
+        "id": 328608055486,
+        "handle": "brooks",
+        "title": "Brooks",
+        "updated_at": "2026-01-02T01:19:06+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:56:04+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328608055486",
+        "image": {
+            "created_at": "2025-12-10T13:14:21+05:00",
+            "alt": null,
+            "width": 200,
+            "height": 200,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/IMG-20251129-WA0006.jpg?v=1765354461"
+        }
+    },
+    {
+        "id": 328684994750,
+        "handle": "casual",
+        "title": "Casual",
+        "updated_at": "2026-01-02T01:19:06+05:00",
+        "body_html": null,
+        "published_at": "2025-12-12T21:06:25+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": null,
+        "published_scope": "web",
+        "admin_graphql_api_id": "gid://shopify/Collection/328684994750"
+    },
+    {
+        "id": 329450160318,
+        "handle": "fashion",
+        "title": "Fashion",
+        "updated_at": "2026-01-01T17:04:13+05:00",
+        "body_html": null,
+        "published_at": "2025-12-30T20:31:04+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": null,
+        "published_scope": "web",
+        "admin_graphql_api_id": "gid://shopify/Collection/329450160318"
+    },
+    {
+        "id": 328608088254,
+        "handle": "hoka",
+        "title": "Hoka",
+        "updated_at": "2026-01-01T19:14:08+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:56:17+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328608088254",
+        "image": {
+            "created_at": "2025-12-10T13:13:31+05:00",
+            "alt": null,
+            "width": 200,
+            "height": 200,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/IMG-20251129-WA0005.jpg?v=1765354411"
+        }
+    },
+    {
+        "id": 328610709694,
+        "handle": "new-arrivals",
+        "title": "New Arrivals",
+        "updated_at": "2026-01-02T01:19:06+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T13:04:38+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328610709694"
+    },
+    {
+        "id": 328608186558,
+        "handle": "new-balance",
+        "title": "New Balance",
+        "updated_at": "2026-01-01T19:27:41+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:56:43+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328608186558",
+        "image": {
+            "created_at": "2025-12-10T13:15:16+05:00",
+            "alt": null,
+            "width": 200,
+            "height": 200,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/IMG-20251129-WA0010.jpg?v=1765354516"
+        }
+    },
+    {
+        "id": 328608153790,
+        "handle": "nike",
+        "title": "Nike",
+        "updated_at": "2026-01-01T19:45:22+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:56:29+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328608153790",
+        "image": {
+            "created_at": "2025-12-10T13:12:44+05:00",
+            "alt": null,
+            "width": 200,
+            "height": 200,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/IMG-20251129-WA0009.jpg?v=1765354364"
+        }
+    },
+    {
+        "id": 328685453502,
+        "handle": "puma",
+        "title": "Puma",
+        "updated_at": "2025-12-15T20:45:50+05:00",
+        "body_html": null,
+        "published_at": "2025-12-12T21:18:44+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": null,
+        "published_scope": "web",
+        "admin_graphql_api_id": "gid://shopify/Collection/328685453502"
+    },
+    {
+        "id": 328685486270,
+        "handle": "reebok",
+        "title": "Reebok",
+        "updated_at": "2025-12-15T18:33:02+05:00",
+        "body_html": null,
+        "published_at": "2025-12-12T21:19:32+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": null,
+        "published_scope": "web",
+        "admin_graphql_api_id": "gid://shopify/Collection/328685486270"
+    },
+    {
+        "id": 329450225854,
+        "handle": "running",
+        "title": "Running",
+        "updated_at": "2026-01-01T19:43:48+05:00",
+        "body_html": null,
+        "published_at": "2025-12-30T20:33:14+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": null,
+        "published_scope": "web",
+        "admin_graphql_api_id": "gid://shopify/Collection/329450225854"
+    },
+    {
+        "id": 328608219326,
+        "handle": "saucony",
+        "title": "Saucony",
+        "updated_at": "2026-01-01T19:46:46+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T11:57:12+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328608219326",
+        "image": {
+            "created_at": "2025-12-10T13:25:41+05:00",
+            "alt": null,
+            "width": 1080,
+            "height": 1080,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/GreenandRedModernChristmasBackgroundInstagramPost_1.png?v=1765355141"
+        }
+    },
+    {
+        "id": 328610152638,
+        "handle": "shoes-for-men",
+        "title": "Shoes for Men",
+        "updated_at": "2026-01-01T19:46:46+05:00",
+        "body_html": "<h2>Premium Men's Footwear Collection</h2>\n<p>Discover our exclusive range of high-quality men's shoes designed for style, comfort, and durability. Whether you're looking for athletic performance or everyday casual wear, we have the perfect pair for you.</p>\n<h3>Why Choose Our Men's Shoes?</h3>\n<ul>\n<li>\n<strong>Top Brands:</strong><span> </span>Nike, Adidas, Puma, Reebok, Skechers, New Balance, Hoka, and more</li>\n<li>\n<strong>Superior Comfort:</strong><span> </span>Advanced cushioning and support technology</li>\n<li>\n<strong>Versatile Styles:</strong><span> </span>From running shoes to casual sneakers</li>\n<li>\n<strong>Quality Guaranteed:</strong><span> </span>Authentic products with lasting durability</li>\n<li>\n<strong>Fast Delivery:</strong><span> </span>Quick shipping across Pakistan</li>\n</ul>\n<p>Step up your footwear game with our carefully curated collection of men's shoes. Find your perfect fit today!</p>",
+        "published_at": "2025-12-10T12:51:34+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328610152638",
+        "image": {
+            "created_at": "2025-12-12T23:30:02+05:00",
+            "alt": null,
+            "width": 1280,
+            "height": 963,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/1.jpg?v=1765564202"
+        }
+    },
+    {
+        "id": 328610283710,
+        "handle": "shoes-for-women",
+        "title": "Shoes for Women",
+        "updated_at": "2026-01-02T01:19:06+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T12:54:01+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328610283710",
+        "image": {
+            "created_at": "2025-12-12T23:32:09+05:00",
+            "alt": null,
+            "width": 1280,
+            "height": 963,
+            "src": "https://cdn.shopify.com/s/files/1/0739/3791/1998/collections/2_a92774eb-7fb1-4f81-8467-80a5a6cea177.jpg?v=1765564329"
+        }
+    },
+    {
+        "id": 328685519038,
+        "handle": "skechers",
+        "title": "Skechers",
+        "updated_at": "2025-12-16T15:38:53+05:00",
+        "body_html": null,
+        "published_at": "2025-12-12T21:20:58+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": null,
+        "published_scope": "web",
+        "admin_graphql_api_id": "gid://shopify/Collection/328685519038"
+    },
+    {
+        "id": 328610676926,
+        "handle": "top-trending",
+        "title": "Top Trending",
+        "updated_at": "2026-01-02T01:19:06+05:00",
+        "body_html": "",
+        "published_at": "2025-12-10T13:04:25+05:00",
+        "sort_order": "best-selling",
+        "template_suffix": "",
+        "published_scope": "global",
+        "admin_graphql_api_id": "gid://shopify/Collection/328610676926"
+    }
+]

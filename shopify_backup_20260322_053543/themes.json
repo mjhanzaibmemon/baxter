@@ -1,0 +1,24 @@
+[
+    {
+        "id": 150129737918,
+        "name": "Horizon",
+        "created_at": "2025-12-09T09:32:46+05:00",
+        "updated_at": "2025-12-10T15:36:27+05:00",
+        "role": "unpublished",
+        "theme_store_id": 2481,
+        "previewable": true,
+        "processing": false,
+        "admin_graphql_api_id": "gid://shopify/Theme/150129737918"
+    },
+    {
+        "id": 150167093438,
+        "name": "kalles",
+        "created_at": "2025-12-10T15:34:24+05:00",
+        "updated_at": "2026-01-21T14:54:34+05:00",
+        "role": "main",
+        "theme_store_id": null,
+        "previewable": true,
+        "processing": false,
+        "admin_graphql_api_id": "gid://shopify/Theme/150167093438"
+    }
+]
