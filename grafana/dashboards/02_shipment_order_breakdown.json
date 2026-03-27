@@ -437,7 +437,7 @@
             "targets": [{
                 "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
                 "format": "table",
-                "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  pro_number AS \"PRO Number\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nORDER BY appointment_date DESC\nLIMIT 500",
+                "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI') AS \"Timestamp\",\n  order_id AS \"Order ID\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  pro_number AS \"PRO Number\",\n  COALESCE(order_status, '-') AS \"Order Status\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('${order_id:raw}' = '' OR order_id ILIKE '%${order_id:raw}%')\n  AND ('${sscc18:raw}' = '' OR sscc18 ILIKE '%${sscc18:raw}%')\n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nORDER BY appointment_date DESC\nLIMIT 500",
                 "refId": "A"
             }],
             "title": "Scanned Barcode Log",

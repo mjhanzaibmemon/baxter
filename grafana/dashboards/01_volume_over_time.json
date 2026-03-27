@@ -342,12 +342,56 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Appointment Date\",\n  COALESCE(pro_number, '-') AS \"PRO Number\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  order_id AS \"Order ID\",\n  shipment_id AS \"Shipment ID\",\n  COALESCE(source_file, '-') AS \"Source File\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nORDER BY appointment_date DESC\nLIMIT 500",
+                    "rawSql": "SELECT\n  TO_CHAR(appointment_date, 'Mon DD, YYYY HH12:MI AM') AS \"Appointment Date\",\n  COALESCE(pro_number, '-') AS \"PRO Number\",\n  sscc18 AS \"SSCC18\",\n  scac AS \"Carrier\",\n  order_id AS \"Order ID\",\n  shipment_id AS \"Shipment ID\",\n  COALESCE(order_status, '-') AS \"Order Status\",\n  COALESCE(source_file, '-') AS \"Source File\"\nFROM shipments\nWHERE $__timeFilter(appointment_date)\n \n  AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\nORDER BY appointment_date DESC\nLIMIT 500",
                     "refId": "A"
                 }
             ],
             "title": "Shipment Details",
             "type": "table"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 3, "x": 18, "y": 10 },
+            "id": 7,
+            "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote})) AND order_status = 'Perfect'",
+                "refId": "A"
+            }],
+            "title": "Perfect Orders",
+            "type": "stat"
+        },
+        {
+            "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "thresholds": { "mode": "absolute", "steps": [{ "color": "#F2495C", "value": null }] },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 5, "w": 3, "x": 21, "y": 10 },
+            "id": 8,
+            "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+            "targets": [{
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "format": "table",
+                "rawSql": "SELECT COUNT(*) AS value FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote})) AND order_status = 'Short'",
+                "refId": "A"
+            }],
+            "title": "Short Orders",
+            "type": "stat"
         }
     ],
     "refresh": "1m",
