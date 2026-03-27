@@ -56,7 +56,7 @@ def seed_file(filepath: Path):
     """Load a single Excel file into the database."""
     logger.info(f"Seeding: {filepath.name}")
     file_bytes = filepath.read_bytes()
-    file_type, rows = detect_and_parse(filepath.name, file_bytes)
+    file_type, rows, claim_rows = detect_and_parse(filepath.name, file_bytes)
 
     if file_type == "shipments":
         n = insert_shipments(rows, source_file=filepath.name)
