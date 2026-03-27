@@ -24,7 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger("baxter.seed")
 
 from excel_parser import detect_and_parse
-from db import insert_shipments, insert_rma_credits, get_shipment_count
+from db import insert_shipments, insert_rma_credits, update_order_status, get_shipment_count
 import psycopg2
 
 
@@ -64,6 +64,9 @@ def seed_file(filepath: Path):
     elif file_type == "rma":
         n = insert_rma_credits(rows, source_file=filepath.name)
         logger.info(f"  ✓ {n} / {len(rows)} RMA credit rows inserted")
+    elif file_type == "order_status":
+        stats = update_order_status(rows)
+        logger.info(f"  ✓ {stats['updated']} shipment rows updated with order_status ({stats['not_found']} not found)")
     else:
         logger.warning(f"  ✗ Could not parse {filepath.name}")
 

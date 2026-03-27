@@ -222,6 +222,51 @@ def parse_rma_detail(file_bytes: bytes) -> list[dict]:
     return rows
 
 
+def parse_all_orders_csv(file_bytes: bytes) -> list[dict]:
+    """
+    Parse Paul's AllOrders.csv — order status data.
+    Columns: Order_Number, Order_Status, Missed_LPNs
+    Returns list of dicts with order_number, order_status, missed_lpns.
+    """
+    if not file_bytes:
+        logger.warning("AllOrders CSV: Empty or invalid file")
+        return []
+
+    try:
+        text = file_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = file_bytes.decode("latin-1")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        logger.warning("AllOrders CSV: Missing header row")
+        return []
+
+    headers = {_normalize_header(name): name for name in reader.fieldnames if name}
+    required = {"order_number", "order_status"}
+    if not required.issubset(headers.keys()):
+        logger.warning(f"AllOrders CSV: Missing required columns. Found: {sorted(headers.keys())}")
+        return []
+
+    rows = []
+    for raw_row in reader:
+        order_number = (raw_row.get(headers["order_number"]) or "").strip()
+        order_status = (raw_row.get(headers["order_status"]) or "").strip()
+        missed_lpns = (raw_row.get(headers.get("missed_lpns", ""), "") or "").strip()
+
+        if not order_number or not order_status:
+            continue
+
+        rows.append({
+            "order_number": order_number,
+            "order_status": order_status,
+            "missed_lpns": missed_lpns,
+        })
+
+    logger.info(f"Parsed {len(rows)} rows from AllOrders CSV")
+    return rows
+
+
 def detect_and_parse(filename: str, file_bytes: bytes):
     """
     Auto-detect file type by filename and parse accordingly.
@@ -229,7 +274,9 @@ def detect_and_parse(filename: str, file_bytes: bytes):
     For CS_RMA files, returns (type, rows, claim_detail_rows).
     """
     fname_lower = filename.lower()
-    if "ms_kargo" in fname_lower or "kargo" in fname_lower:
+    if "allorders" in fname_lower or "all_orders" in fname_lower:
+        return "order_status", parse_all_orders_csv(file_bytes), []
+    elif "ms_kargo" in fname_lower or "kargo" in fname_lower:
         return "shipments", parse_ms_kargo(file_bytes), []
     elif fname_lower.endswith(".csv") and ("result" in fname_lower or "shipment" in fname_lower):
         return "shipments", parse_result_csv(file_bytes), []

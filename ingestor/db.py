@@ -249,6 +249,44 @@ def get_shipment_count() -> int:
         release_connection(conn)
 
 
+def update_order_status(rows: list[dict]) -> dict:
+    """
+    Update shipments.order_status from AllOrders.csv data.
+    Matches on order_id = order_number.
+    Returns stats dict with matched/unmatched counts.
+    """
+    if not rows:
+        return {"total": 0, "updated": 0, "not_found": 0}
+
+    conn = get_connection()
+    try:
+        updated = 0
+        not_found = 0
+        with conn.cursor() as cur:
+            for row in rows:
+                cur.execute(
+                    "UPDATE shipments SET order_status = %s WHERE order_id = %s",
+                    (row["order_status"], row["order_number"]),
+                )
+                if cur.rowcount > 0:
+                    updated += cur.rowcount
+                else:
+                    not_found += 1
+        conn.commit()
+        stats = {"total": len(rows), "updated": updated, "not_found": not_found}
+        logger.info(
+            f"Order status update: {updated} shipment rows updated, "
+            f"{not_found} order_numbers not found in shipments"
+        )
+        return stats
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Order status update error: {e}")
+        raise
+    finally:
+        release_connection(conn)
+
+
 def insert_claim_details(rows: list[dict], source_file: str, return_stats: bool = False):
     """
     Bulk-insert claim detail rows using execute_values (10-50x faster).

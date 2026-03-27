@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS shipments (
     shipment_id      VARCHAR(50),
     source_file      VARCHAR(255),
     ingested_at      TIMESTAMPTZ  DEFAULT NOW(),
+    order_status     VARCHAR(20),                  -- Perfect / Short (from AllOrders)
     -- Deduplication: same SSCC18 + ORDER_ID = same shipment
     CONSTRAINT uq_shipment UNIQUE (sscc18, order_id)
 );
@@ -48,6 +49,8 @@ CREATE INDEX IF NOT EXISTS idx_shipments_pro_number  ON shipments(pro_number);
 CREATE INDEX IF NOT EXISTS idx_shipments_shipment_id ON shipments(shipment_id);
 CREATE INDEX IF NOT EXISTS idx_shipments_order_id    ON shipments(order_id);
 CREATE INDEX IF NOT EXISTS idx_shipments_ingested_at ON shipments(ingested_at);
+ALTER TABLE shipments ADD COLUMN IF NOT EXISTS order_status VARCHAR(20);
+CREATE INDEX IF NOT EXISTS idx_shipments_order_status ON shipments(order_status);
 
 -- -------------------------------------------------------
 -- Individual claim records (Customer Claim Log in Grafana)
