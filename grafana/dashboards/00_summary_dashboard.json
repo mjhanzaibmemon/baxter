@@ -524,6 +524,26 @@
                 "type": "datasource"
             },
             {
+                "current": { "selected": false, "text": "", "value": "" },
+                "hide": 0,
+                "label": "Order ID",
+                "name": "order_id",
+                "options": [{ "selected": true, "text": "", "value": "" }],
+                "query": "",
+                "skipUrlSync": false,
+                "type": "textbox"
+            },
+            {
+                "current": { "selected": false, "text": "", "value": "" },
+                "hide": 0,
+                "label": "SSCC18",
+                "name": "sscc18",
+                "options": [{ "selected": true, "text": "", "value": "" }],
+                "query": "",
+                "skipUrlSync": false,
+                "type": "textbox"
+            },
+            {
                 "current": {
                     "selected": true,
                     "text": [
