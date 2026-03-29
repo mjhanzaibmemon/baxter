@@ -218,7 +218,7 @@
                         ]
                     },
                     "unit": "currencyUSD",
-                    "decimals": 0,
+                    "decimals": 2,
                     "noValue": "0"
                 },
                 "overrides": []
@@ -248,7 +248,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount / NULLIF(c.quantity, 0)))::numeric, 0), 0) AS \"$ Saved\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND c.quantity != 0 AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 2), 0) AS \"$ Saved\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
                     "refId": "A"
                 }
             ],
@@ -472,7 +472,7 @@
                         ]
                     },
                     "unit": "currencyUSD",
-                    "decimals": 0,
+                    "decimals": 2,
                     "noValue": "0"
                 },
                 "overrides": []
@@ -502,7 +502,7 @@
                         "uid": "${DS_POSTGRESQL}"
                     },
                     "format": "table",
-                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount / NULLIF(c.quantity, 0)))::numeric, 0), 0) AS \"$ Saved from Verified Shortages\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND c.quantity != 0 AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 2), 0) AS \"$ Saved from Verified Shortages\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
                     "refId": "A"
                 }
             ],
