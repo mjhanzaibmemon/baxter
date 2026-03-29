@@ -50,7 +50,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 5,
+                "h": 6,
                 "w": 6,
                 "x": 0,
                 "y": 0
@@ -58,14 +58,16 @@
             "id": 1,
             "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
                     ]
                 },
                 "textMode": "value_and_name",
-                "justifyMode": "center"
+                "justifyMode": "center",
+                "showPercentChange": true,
+                "percentChangeColorMode": "standard"
             },
             "targets": [
                 {
@@ -73,8 +75,8 @@
                         "type": "postgres",
                         "uid": "${DS_POSTGRESQL}"
                     },
-                    "format": "table",
-                    "rawSql": "SELECT COUNT(DISTINCT order_id) AS \"Orders Shipped\" FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
+                    "format": "time_series",
+                    "rawSql": "SELECT date_trunc('week', appointment_date) AS time, SUM(COUNT(DISTINCT order_id)) OVER (ORDER BY date_trunc('week', appointment_date)) AS \"Orders Shipped\" FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote})) GROUP BY date_trunc('week', appointment_date) ORDER BY 1",
                     "refId": "A"
                 }
             ],
@@ -108,7 +110,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 5,
+                "h": 6,
                 "w": 6,
                 "x": 6,
                 "y": 0
@@ -116,14 +118,16 @@
             "id": 2,
             "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
                     ]
                 },
                 "textMode": "value_and_name",
-                "justifyMode": "center"
+                "justifyMode": "center",
+                "showPercentChange": true,
+                "percentChangeColorMode": "standard"
             },
             "targets": [
                 {
@@ -131,8 +135,8 @@
                         "type": "postgres",
                         "uid": "${DS_POSTGRESQL}"
                     },
-                    "format": "table",
-                    "rawSql": "SELECT COUNT(*) AS \"Claims Submitted\" FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')",
+                    "format": "time_series",
+                    "rawSql": "SELECT date_trunc('week', claim_date) AS time, SUM(COUNT(*)) OVER (ORDER BY date_trunc('week', claim_date)) AS \"Claims Submitted\" FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') GROUP BY date_trunc('week', claim_date) ORDER BY 1",
                     "refId": "A"
                 }
             ],
@@ -166,7 +170,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 5,
+                "h": 6,
                 "w": 6,
                 "x": 12,
                 "y": 0
@@ -174,14 +178,16 @@
             "id": 3,
             "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
                     ]
                 },
                 "textMode": "value_and_name",
-                "justifyMode": "center"
+                "justifyMode": "center",
+                "showPercentChange": true,
+                "percentChangeColorMode": "standard"
             },
             "targets": [
                 {
@@ -189,8 +195,8 @@
                         "type": "postgres",
                         "uid": "${DS_POSTGRESQL}"
                     },
-                    "format": "table",
-                    "rawSql": "SELECT COUNT(*) AS \"Verified Shortages\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "format": "time_series",
+                    "rawSql": "WITH weekly AS (SELECT date_trunc('week', c.claim_date) AS d, COUNT(*) AS cnt FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) GROUP BY 1) SELECT d AS time, SUM(cnt) OVER (ORDER BY d) AS \"Verified Shortages\" FROM weekly ORDER BY 1",
                     "refId": "A"
                 }
             ],
@@ -224,7 +230,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 5,
+                "h": 6,
                 "w": 6,
                 "x": 18,
                 "y": 0
@@ -232,14 +238,16 @@
             "id": 4,
             "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
                     ]
                 },
                 "textMode": "value_and_name",
-                "justifyMode": "center"
+                "justifyMode": "center",
+                "showPercentChange": true,
+                "percentChangeColorMode": "standard"
             },
             "targets": [
                 {
@@ -247,8 +255,8 @@
                         "type": "postgres",
                         "uid": "${DS_POSTGRESQL}"
                     },
-                    "format": "table",
-                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 2), 0) AS \"$ Saved\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "format": "time_series",
+                    "rawSql": "WITH weekly AS (SELECT date_trunc('week', c.claim_date) AS d, ROUND(SUM(ABS(c.claim_amount))::numeric, 2) AS amt FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) GROUP BY 1) SELECT d AS time, SUM(amt) OVER (ORDER BY d) AS \"$ Saved\" FROM weekly ORDER BY 1",
                     "refId": "A"
                 }
             ],
@@ -339,7 +347,7 @@
                 "h": 10,
                 "w": 12,
                 "x": 0,
-                "y": 5
+                "y": 6
             },
             "id": 5,
             "options": {
@@ -421,7 +429,7 @@
                 "h": 10,
                 "w": 12,
                 "x": 12,
-                "y": 5
+                "y": 6
             },
             "id": 6,
             "options": {
@@ -481,7 +489,7 @@
                 "h": 4,
                 "w": 12,
                 "x": 6,
-                "y": 15
+                "y": 16
             },
             "id": 7,
             "options": {
@@ -525,21 +533,41 @@
                 "type": "datasource"
             },
             {
-                "current": { "selected": false, "text": "", "value": "" },
+                "current": {
+                    "selected": false,
+                    "text": "",
+                    "value": ""
+                },
                 "hide": 0,
                 "label": "Order ID",
                 "name": "order_id",
-                "options": [{ "selected": true, "text": "", "value": "" }],
+                "options": [
+                    {
+                        "selected": true,
+                        "text": "",
+                        "value": ""
+                    }
+                ],
                 "query": "",
                 "skipUrlSync": false,
                 "type": "textbox"
             },
             {
-                "current": { "selected": false, "text": "", "value": "" },
+                "current": {
+                    "selected": false,
+                    "text": "",
+                    "value": ""
+                },
                 "hide": 0,
                 "label": "SSCC18",
                 "name": "sscc18",
-                "options": [{ "selected": true, "text": "", "value": "" }],
+                "options": [
+                    {
+                        "selected": true,
+                        "text": "",
+                        "value": ""
+                    }
+                ],
                 "query": "",
                 "skipUrlSync": false,
                 "type": "textbox"
