@@ -1,310 +1,577 @@
 {
-  "id": null,
-  "title": "Order & Claims Summary",
-  "uid": "summary-dashboard",
-  "schemaVersion": 37,
-  "version": 1,
-  "refresh": "5m",
-  "time": {
-    "from": "now-30d",
-    "to": "now"
-  },
-  "panels": [
-    {
-      "id": 1,
-      "type": "stat",
-      "title": "Orders Shipped",
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "#3274D9", "value": null }] },
-          "unit": "short",
-          "decimals": 0,
-          "noValue": "0"
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "textMode": "value_and_name",
-        "justifyMode": "center",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(DISTINCT order_id) AS \"Orders Shipped\" FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))"
-        }
-      ]
+    "__inputs": [],
+    "__requires": [],
+    "annotations": {
+        "list": []
     },
-    {
-      "id": 2,
-      "type": "stat",
-      "title": "Claims Submitted",
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "#FF9830", "value": null }] },
-          "unit": "short",
-          "decimals": 0,
-          "noValue": "0"
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "textMode": "value_and_name",
-        "justifyMode": "center",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(*) AS \"Claims Submitted\" FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')"
-        }
-      ]
+    "id": null,
+    "title": "Order & Claims Summary",
+    "uid": "summary-dashboard",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "5m",
+    "time": {
+        "from": "now-30d",
+        "to": "now"
     },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Verified Shortages",
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "#F2495C", "value": null }] },
-          "unit": "short",
-          "decimals": 0,
-          "noValue": "0"
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "textMode": "value_and_name",
-        "justifyMode": "center",
-        "orientation": "auto"
-      },
-      "targets": [
+    "description": "Orders, Claims, and Verified Shortages Summary Dashboard",
+    "editable": true,
+    "graphTooltip": 1,
+    "links": [],
+    "tags": [
+        "baxter",
+        "summary"
+    ],
+    "panels": [
         {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(*) AS \"Verified Shortages\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "$ Saved",
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
-          "unit": "currencyUSD",
-          "decimals": 0,
-          "noValue": "$0"
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#3274D9",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none",
+                    "decimals": 0,
+                    "noValue": "0"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                },
+                "textMode": "value_and_name",
+                "justifyMode": "center"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT COUNT(DISTINCT order_id) AS \"Orders Shipped\" FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))",
+                    "refId": "A"
+                }
+            ],
+            "title": "",
+            "transparent": false,
+            "type": "stat"
         },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "textMode": "value_and_name",
-        "justifyMode": "center",
-        "orientation": "auto"
-      },
-      "targets": [
         {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COALESCE(SUM(claim_amount),0) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND status = 'Verified'"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "type": "timeseries",
-      "title": "Orders Shipped and Claims Submitted Over Time",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2,
-            "spanNulls": false,
-            "drawStyle": "line",
-            "showPoints": "auto",
-            "pointSize": 5,
-            "lineInterpolation": "linear"
-          },
-          "unit": "short",
-          "decimals": 0
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#FF9830",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none",
+                    "decimals": 0,
+                    "noValue": "0"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 6,
+                "y": 0
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                },
+                "textMode": "value_and_name",
+                "justifyMode": "center"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT COUNT(*) AS \"Claims Submitted\" FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')",
+                    "refId": "A"
+                }
+            ],
+            "title": "",
+            "transparent": false,
+            "type": "stat"
         },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "Orders Shipped" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "#3274D9", "mode": "fixed" } }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Claims Submitted" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }
-            ]
-          }
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#56A64B",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "none",
+                    "decimals": 0,
+                    "noValue": "0"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 12,
+                "y": 0
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                },
+                "textMode": "value_and_name",
+                "justifyMode": "center"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT COUNT(*) AS \"Verified Shortages\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "refId": "A"
+                }
+            ],
+            "title": "",
+            "transparent": false,
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#56A64B",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD",
+                    "decimals": 0,
+                    "noValue": "0"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 18,
+                "y": 0
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                },
+                "textMode": "value_and_name",
+                "justifyMode": "center"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 0), 0) AS \"$ Saved\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "refId": "A"
+                }
+            ],
+            "title": "",
+            "transparent": false,
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "fillOpacity": 70,
+                        "lineWidth": 0,
+                        "drawStyle": "bars",
+                        "showPoints": "never",
+                        "stacking": {
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Orders Shipped"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "left"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Claims Submitted"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.drawStyle",
+                                "value": "bars"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 70
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.showPoints",
+                                "value": "never"
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 0,
+                "y": 5
+            },
+            "id": 5,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "time_series",
+                    "rawSql": "WITH cw AS (\n  SELECT date_trunc('day', claim_date) AS d, COUNT(*) AS c\n  FROM claim_details\n  WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')\n  GROUP BY 1\n),\nsw AS (\n  SELECT date_trunc('day', appointment_date) AS d, COUNT(DISTINCT order_id) AS o\n  FROM shipments\n  WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote}))\n  GROUP BY 1\n)\nSELECT COALESCE(cw.d, sw.d)::timestamp AS time,\n  COALESCE(sw.o, 0) AS \"Orders Shipped\",\n  COALESCE(cw.c, 0) AS \"Claims Submitted\"\nFROM cw FULL JOIN sw ON sw.d=cw.d\nORDER BY time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Orders Shipped and Claims Submitted Over Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "fillOpacity": 80,
+                        "lineWidth": 0,
+                        "stacking": {
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Verified Claims"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Invalid Claims"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#F2495C",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 12,
+                "y": 5
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "top"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                },
+                "orientation": "horizontal",
+                "barWidth": 0.5,
+                "groupWidth": 0.8,
+                "showValue": "never",
+                "stacking": "normal"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT COALESCE(c.ship_to_name, c.address_name, 'Unknown') AS \"Customer\",\n  COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))) AS \"Verified Claims\",\n  COUNT(*) FILTER(WHERE NOT EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))) AS \"Invalid Claims\"\nFROM claim_details c\nWHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')\nGROUP BY COALESCE(c.ship_to_name, c.address_name, 'Unknown')\nORDER BY COUNT(*) DESC\nLIMIT 7",
+                    "refId": "A"
+                }
+            ],
+            "title": "Verified vs Invalid Claims by Customer",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "${DS_POSTGRESQL}"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#73BF69",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "currencyUSD",
+                    "decimals": 0,
+                    "noValue": "0"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 12,
+                "x": 6,
+                "y": 15
+            },
+            "id": 7,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ]
+                },
+                "textMode": "value_and_name",
+                "justifyMode": "center"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "${DS_POSTGRESQL}"
+                    },
+                    "format": "table",
+                    "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 0), 0) AS \"$ Saved from Verified Shortages\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+                    "refId": "A"
+                }
+            ],
+            "title": "",
+            "transparent": false,
+            "type": "stat"
+        }
+    ],
+    "templating": {
+        "list": [
+            {
+                "name": "carrier",
+                "type": "query",
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "refresh": 1,
+                "query": "SELECT DISTINCT scac FROM shipments ORDER BY scac",
+                "multi": true,
+                "includeAll": true,
+                "allValue": "*",
+                "current": {
+                    "selected": false,
+                    "text": "All",
+                    "value": "$__all"
+                }
+            },
+            {
+                "name": "claim_type",
+                "type": "query",
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "${DS_POSTGRESQL}"
+                },
+                "refresh": 1,
+                "query": "SELECT DISTINCT claim_type FROM claim_details ORDER BY claim_type",
+                "multi": true,
+                "includeAll": true,
+                "allValue": "*",
+                "current": {
+                    "selected": false,
+                    "text": "All",
+                    "value": "$__all"
+                }
+            }
         ]
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT date_trunc('day', appointment_date) AS time, COUNT(DISTINCT order_id) AS \"Orders Shipped\" FROM shipments WHERE $__timeFilter(appointment_date) AND ('$__all' IN (${carrier:singlequote}) OR scac IN (${carrier:singlequote})) GROUP BY 1 ORDER BY 1"
-        },
-        {
-          "refId": "B",
-          "format": "time_series",
-          "rawSql": "SELECT date_trunc('day', claim_date) AS time, COUNT(*) AS \"Claims Submitted\" FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') GROUP BY 1 ORDER BY 1"
-        }
-      ]
     },
-    {
-      "id": 6,
-      "type": "barchart",
-      "title": "Verified vs Invalid Claims by Customer",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 80,
-            "lineWidth": 0,
-            "stacking": { "mode": "normal" }
-          },
-          "unit": "short",
-          "decimals": 0
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "Verified Claims" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Invalid Claims" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } }
-            ]
-          }
+    "timepicker": {
+        "refresh_intervals": [
+            "5s",
+            "10s",
+            "30s",
+            "1m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "2h",
+            "1d"
+        ],
+        "time_options": [
+            "5m",
+            "15m",
+            "1h",
+            "6h",
+            "12h",
+            "24h",
+            "2d",
+            "7d",
+            "30d"
         ]
-      },
-      "options": {
-        "orientation": "horizontal",
-        "groupWidth": 0.7,
-        "barWidth": 0.8,
-        "fullHighlight": false,
-        "stacking": "normal",
-        "showTooltip": true,
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COALESCE(c.ship_to_name, c.address_name, 'Unknown') AS \"Customer\",\n  COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))) AS \"Verified Claims\",\n  COUNT(*) FILTER(WHERE NOT EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))) AS \"Invalid Claims\"\nFROM claim_details c\nWHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')\nGROUP BY COALESCE(c.ship_to_name, c.address_name, 'Unknown')\nORDER BY COUNT(*) DESC\nLIMIT 10"
-        }
-      ]
-    },
-    {
-      "id": 7,
-      "type": "stat",
-      "title": "$ Saved from Verified Shortages",
-      "gridPos": { "h": 4, "w": 12, "x": 6, "y": 12 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
-          "unit": "currencyUSD",
-          "decimals": 0,
-          "noValue": "$0",
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "textMode": "value_and_name",
-        "justifyMode": "center",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COALESCE(SUM(claim_amount),0) AS value FROM claim_details WHERE $__timeFilter(claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR claim_type IN (${claim_type:singlequote})) AND status = 'Verified'"
-        }
-      ]
     }
-  ],
-  "templating": {
-    "list": [
-      {
-        "name": "carrier",
-        "type": "query",
-        "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-        "refresh": 1,
-        "query": "SELECT DISTINCT scac FROM shipments ORDER BY scac",
-        "multi": true,
-        "includeAll": true,
-        "allValue": "*",
-        "current": { "selected": false, "text": "All", "value": "*" }
-      },
-      {
-        "name": "claim_type",
-        "type": "query",
-        "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
-        "refresh": 1,
-        "query": "SELECT DISTINCT claim_type FROM claim_details ORDER BY claim_type",
-        "multi": true,
-        "includeAll": true,
-        "allValue": "*",
-        "current": { "selected": false, "text": "All", "value": "*" }
-      }
-    ]
-  },
-  "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
-    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
-  },
-  "annotations": { "list": [] },
-  "links": []
 }
