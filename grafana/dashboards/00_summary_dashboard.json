@@ -11,7 +11,7 @@
     "version": 1,
     "refresh": "5m",
     "time": {
-        "from": "now-30d",
+        "from": "2025-01-01T00:00:00.000Z",
         "to": "now"
     },
     "description": "Orders, Claims, and Verified Shortages Summary Dashboard",
@@ -512,40 +512,49 @@
     "templating": {
         "list": [
             {
-                "name": "carrier",
-                "type": "query",
-                "datasource": {
-                    "type": "postgres",
-                    "uid": "${DS_POSTGRESQL}"
-                },
+                "current": {},
+                "hide": 0,
+                "includeAll": false,
+                "label": "Datasource",
+                "name": "DS_POSTGRESQL",
+                "options": [],
+                "query": "postgres",
                 "refresh": 1,
-                "query": "SELECT DISTINCT scac FROM shipments ORDER BY scac",
-                "multi": true,
-                "includeAll": true,
-                "allValue": "*",
-                "current": {
-                    "selected": false,
-                    "text": "All",
-                    "value": "$__all"
-                }
+                "type": "datasource"
             },
             {
-                "name": "claim_type",
-                "type": "query",
-                "datasource": {
-                    "type": "postgres",
-                    "uid": "${DS_POSTGRESQL}"
-                },
-                "refresh": 1,
-                "query": "SELECT DISTINCT claim_type FROM claim_details ORDER BY claim_type",
-                "multi": true,
+                "current": { "selected": true, "text": ["FXFE","HSNR","HSND","HSNC","HSNN","HSNA"], "value": ["FXFE","HSNR","HSND","HSNC","HSNN","HSNA"] },
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "definition": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
+                "hide": 0,
                 "includeAll": true,
-                "allValue": "*",
-                "current": {
-                    "selected": false,
-                    "text": "All",
-                    "value": "$__all"
-                }
+                "label": "Carrier",
+                "multi": true,
+                "name": "carrier",
+                "options": [],
+                "query": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            },
+            {
+                "current": { "selected": true, "text": "SHORTAGE", "value": ["SHORTAGE"] },
+                "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+                "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Claim Type",
+                "multi": true,
+                "name": "claim_type",
+                "options": [],
+                "query": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL ORDER BY claim_type",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
             }
         ]
     },
