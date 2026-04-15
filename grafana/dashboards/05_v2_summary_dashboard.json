@@ -1,0 +1,973 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {
+    "list": []
+  },
+  "id": null,
+  "title": "Monthly Claims Performance & Kargo Validation (V2)",
+  "uid": "summary-dashboard-v2",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-3M",
+    "to": "now"
+  },
+  "description": "Monthly Claims Performance & Kargo Validation — VP Summary Dashboard",
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "tags": [
+    "baxter",
+    "summary",
+    "kargo",
+    "v2"
+  ],
+  "timezone": "browser",
+  "panels": [
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align:center;padding:4px 0\"><span style=\"color:#56C0D8;font-size:16px;font-style:italic\">Monthly Claims Performance — Dynamic Date Range</span></div>"
+      },
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0E2A47",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 0,
+        "y": 2
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "showPercentChange": true,
+        "percentChangeColorMode": "standard"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('month', c.claim_date)::timestamp AS time, COUNT(*) AS \"Claims Received\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Claims Received",
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#1A1A2E",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 5,
+        "y": 2
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard"
+      },
+      "description": "100% of claims historically paid before Kargo validation",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('month', c.claim_date)::timestamp AS time, COUNT(*) AS \"Would Have Paid\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Would Have Paid (Before Validation)",
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0E3B1E",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none",
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 10,
+        "y": 2
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "showPercentChange": true,
+        "percentChangeColorMode": "standard"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('month', c.claim_date)::timestamp AS time, COUNT(*) AS \"Refutable Claims\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Refutable Claims (Kargo \"Perfect Match\")",
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0E3B1E",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 15,
+        "y": 2
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "showPercentChange": true,
+        "percentChangeColorMode": "standard"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('month', c.claim_date)::timestamp AS time, COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 2), 0) AS \"Avoidable Spend\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Avoidable Spend (Kargo Verified)",
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2C1A4A",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 4,
+        "x": 20,
+        "y": 2
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "showPercentChange": true,
+        "percentChangeColorMode": "standard"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('month', c.claim_date)::timestamp AS time, COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 2), 0) AS \"Actually Paid\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Actually Paid",
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "drawStyle": "bars",
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            },
+            "barMaxWidth": 60
+          },
+          "unit": "currencyUSD",
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Legitimate (Should Pay)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Refutable (Should NOT Pay)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 0,
+        "y": 9
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "WITH cc AS (SELECT c.claim_date, c.claim_amount, CASE WHEN EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) THEN true ELSE false END AS refutable FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')) SELECT date_trunc('month', claim_date)::timestamp AS time, COALESCE(ROUND(SUM(ABS(claim_amount)) FILTER(WHERE NOT refutable)::numeric, 0), 0) AS \"Legitimate (Should Pay)\", COALESCE(ROUND(SUM(ABS(claim_amount)) FILTER(WHERE refutable)::numeric, 0), 0) AS \"Refutable (Should NOT Pay)\" FROM cc GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "What We Paid vs. What We Should Have Paid",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#F2495C",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 60
+              },
+              {
+                "color": "#73BF69",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 8,
+        "y": 9
+      },
+      "id": 8,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))) / NULLIF(COUNT(*), 0), 0) AS \"Claims Coverage\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(100.0 * COALESCE(SUM(ABS(c.claim_amount)) FILTER(WHERE EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))), 0) / NULLIF(SUM(ABS(c.claim_amount)), 0), 0) AS \"Dollars Coverage\" FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')",
+          "refId": "B"
+        }
+      ],
+      "title": "Kargo Validation Coverage",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "pointSize": 8,
+            "showPoints": "always",
+            "spanNulls": true
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Claims Received"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3274D9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Refutable (Kargo Match)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 16,
+        "y": 9
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "time_series",
+          "rawSql": "WITH cc AS (SELECT c.claim_date, CASE WHEN EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) THEN 1 ELSE 0 END AS refutable FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')) SELECT date_trunc('month', claim_date)::timestamp AS time, COUNT(*) AS \"Claims Received\", SUM(refutable) AS \"Refutable (Kargo Match)\" FROM cc GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Claims Trend: Received vs. Refutable",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "center",
+            "filterable": false,
+            "inspect": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "transparent"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Month"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              },
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Paid"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.align",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 9,
+        "x": 0,
+        "y": 20
+      },
+      "id": 10,
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": true,
+        "cellHeight": "md"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "table",
+          "rawSql": "WITH cc AS (SELECT c.*, CASE WHEN EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) THEN true ELSE false END AS refutable FROM claim_details c WHERE $__timeFilter(c.claim_date) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')) SELECT TO_CHAR(date_trunc('month', claim_date), 'FMMonth YYYY') AS \"Month\", COUNT(*) AS \"Claims\", ROUND(SUM(ABS(claim_amount))::numeric, 0) AS \"Paid\", SUM(CASE WHEN refutable THEN 1 ELSE 0 END)::text || ' (' || ROUND(100.0 * SUM(CASE WHEN refutable THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0))::text || '%)' AS \"Kargo Perfect Match\", '$' || TO_CHAR(ROUND(COALESCE(SUM(ABS(claim_amount)) FILTER(WHERE refutable), 0)::numeric, 0), 'FM999,999,999') || ' (' || ROUND(100.0 * COALESCE(SUM(ABS(claim_amount)) FILTER(WHERE refutable), 0) / NULLIF(SUM(ABS(claim_amount)), 0))::text || '%)' AS \"Avoidable Spend\", SUM(CASE WHEN NOT refutable THEN 1 ELSE 0 END)::text || ' / $' || TO_CHAR(ROUND(COALESCE(SUM(ABS(claim_amount)) FILTER(WHERE NOT refutable), 0)::numeric, 0), 'FM999,999,999') AS \"Truly Unverifiable\" FROM cc GROUP BY date_trunc('month', claim_date) ORDER BY date_trunc('month', claim_date)",
+          "refId": "A"
+        }
+      ],
+      "title": "Monthly Summary",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF9830",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "0"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Claims with Evidence to Deny"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Missed Savings"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 9,
+        "y": 20
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "showPercentChange": false,
+        "orientation": "vertical"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS \"Claims with Evidence to Deny\" FROM claim_details c WHERE c.claim_date >= date_trunc('month', now()) - interval '1 month' AND c.claim_date < date_trunc('month', now()) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "table",
+          "rawSql": "SELECT COALESCE(ROUND(SUM(ABS(c.claim_amount))::numeric, 0), 0) AS \"Missed Savings\" FROM claim_details c WHERE c.claim_date >= date_trunc('month', now()) - interval '1 month' AND c.claim_date < date_trunc('month', now()) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK') AND EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id)))))",
+          "refId": "B"
+        }
+      ],
+      "title": "⚠ Missed Opportunities",
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 20
+      },
+      "id": 12,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:12px 16px;line-height:1.6\"><div style=\"font-size:18px;margin-bottom:10px\">💡 <b>Key Takeaway</b></div><p style=\"font-size:14px;color:#D8DEE9\">88–95% of claims are verifiably not shortages. Historically, these would have been paid in full.<br><br>Kargo gives us the evidence to stop paying invalid claims and recover <b style=\"color:#73BF69\">$28K+</b> this month.</p></div>"
+      },
+      "title": "",
+      "transparent": false,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#1A5C2B",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "—"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value",
+        "justifyMode": "center",
+        "showPercentChange": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "format": "table",
+          "rawSql": "WITH lm AS (SELECT c.claim_amount, CASE WHEN EXISTS(SELECT 1 FROM shipments s WHERE ('$__all' IN (${carrier:singlequote}) OR s.scac IN (${carrier:singlequote})) AND s.order_status = 'Perfect' AND ((c.sscc18 IS NOT NULL AND c.sscc18 <> '' AND s.sscc18=c.sscc18) OR (c.order_id IS NOT NULL AND c.order_id <> '' AND ((LENGTH(c.order_id) = 7 AND RIGHT(s.order_id, 7) = c.order_id) OR (LENGTH(c.order_id) = 8 AND RIGHT(s.order_id, 8) = c.order_id))))) THEN true ELSE false END AS refutable FROM claim_details c WHERE c.claim_date >= date_trunc('month', now()) - interval '1 month' AND c.claim_date < date_trunc('month', now()) AND ('$__all' IN (${claim_type:singlequote}) OR c.claim_type IN (${claim_type:singlequote})) AND c.business_unit_code IN ('1MF','1MY','1MQ','1MS','1MK')) SELECT '💰 Bottom Line: We paid $' || TO_CHAR(ROUND(SUM(ABS(claim_amount))::numeric, 0), 'FM999,999,999') || ' last month, but Kargo shows $' || TO_CHAR(ROUND(COALESCE(SUM(ABS(claim_amount)) FILTER(WHERE refutable), 0)::numeric, 0), 'FM999,999,999') || ' of that was avoidable — a verified opportunity to reduce cost.' AS \"summary\" FROM lm",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "transparent": false,
+      "type": "stat"
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "name": "DS_POSTGRESQL",
+        "options": [],
+        "query": "postgres",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Order ID",
+        "name": "order_id",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "SSCC18",
+        "name": "sscc18",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "FXFE",
+            "HSNR",
+            "HSND",
+            "HSNC",
+            "HSNN",
+            "HSNA"
+          ],
+          "value": [
+            "FXFE",
+            "HSNR",
+            "HSND",
+            "HSNC",
+            "HSNN",
+            "HSNA"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "definition": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Carrier",
+        "multi": true,
+        "name": "carrier",
+        "options": [],
+        "query": "SELECT DISTINCT scac FROM shipments WHERE scac IS NOT NULL ORDER BY scac",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "SHORTAGE",
+          "value": [
+            "SHORTAGE"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "${DS_POSTGRESQL}"
+        },
+        "definition": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL AND claim_type NOT ILIKE '%missing%pro%' ORDER BY claim_type",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Claim Type",
+        "multi": true,
+        "name": "claim_type",
+        "options": [],
+        "query": "SELECT DISTINCT claim_type FROM claim_details WHERE claim_type IS NOT NULL AND claim_type NOT ILIKE '%missing%pro%' ORDER BY claim_type",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "timepicker": {}
+}

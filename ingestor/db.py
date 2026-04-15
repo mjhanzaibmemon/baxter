@@ -287,6 +287,52 @@ def update_order_status(rows: list[dict]) -> dict:
         release_connection(conn)
 
 
+def update_kargo_order_status(rows: list[dict]) -> dict:
+    """
+    Update shipments.order_status from Kargo order_level CSV data.
+    Matches on RIGHT(order_id, 8) = original_order since Kargo order numbers
+    have an 8-digit shipment prefix stripped.
+    Returns stats dict with matched/unmatched counts.
+    """
+    if not rows:
+        return {"total": 0, "updated": 0, "not_found": 0}
+
+    conn = get_connection()
+    try:
+        updated = 0
+        not_found = 0
+        with conn.cursor() as cur:
+            for row in rows:
+                # Try exact match first, then RIGHT(8) fallback
+                cur.execute(
+                    "UPDATE shipments SET order_status = %s WHERE order_id = %s",
+                    (row["order_status"], row["order_number"]),
+                )
+                if cur.rowcount == 0:
+                    # Fallback: match on last 8 digits of order_id
+                    cur.execute(
+                        "UPDATE shipments SET order_status = %s WHERE RIGHT(order_id, %s) = %s",
+                        (row["order_status"], len(row["order_number"]), row["order_number"]),
+                    )
+                if cur.rowcount > 0:
+                    updated += cur.rowcount
+                else:
+                    not_found += 1
+        conn.commit()
+        stats = {"total": len(rows), "updated": updated, "not_found": not_found}
+        logger.info(
+            f"Kargo order status update: {updated} shipment rows updated, "
+            f"{not_found} order_numbers not found in shipments"
+        )
+        return stats
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Kargo order status update error: {e}")
+        raise
+    finally:
+        release_connection(conn)
+
+
 def insert_claim_details(rows: list[dict], source_file: str, return_stats: bool = False):
     """
     Bulk-insert claim detail rows using execute_values (10-50x faster).

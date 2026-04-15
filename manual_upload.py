@@ -16,7 +16,7 @@ load_dotenv()
 
 # Import from ingestor
 from excel_parser import detect_and_parse
-from db import insert_shipments, insert_rma_credits, insert_claim_details, rebuild_daily_history, update_order_status
+from db import insert_shipments, insert_rma_credits, insert_claim_details, rebuild_daily_history, update_order_status, update_kargo_order_status
 
 def upload_file(filepath: str):
     """Upload a supported file directly to the database."""
@@ -64,6 +64,11 @@ def upload_file(filepath: str):
         if file_type == "order_status" and rows:
             stats = update_order_status(rows)
             print(f"  Updated {stats['updated']} shipment rows with order_status")
+            print(f"  Not found in shipments: {stats['not_found']}")
+        
+        if file_type == "order_level" and rows:
+            stats = update_kargo_order_status(rows)
+            print(f"  Kargo order_level: Updated {stats['updated']} shipment rows")
             print(f"  Not found in shipments: {stats['not_found']}")
         
         if claim_rows:

@@ -267,6 +267,72 @@ def parse_all_orders_csv(file_bytes: bytes) -> list[dict]:
     return rows
 
 
+def parse_order_level_csv(file_bytes: bytes) -> list[dict]:
+    """
+    Parse Kargo order_level CSV files.
+    Columns: orderNumber, orderStatus, missedLpns
+    orderNumber is a 16-digit Kargo number (may have leading tab/whitespace).
+    First 8 digits = shipment prefix, last 8 = original order number.
+    orderStatus: COMPLETED -> Perfect, INCOMPLETE -> Short.
+    missedLpns: pipe-delimited SSCC18 values (for INCOMPLETE orders).
+    Returns list of dicts for update_kargo_order_status().
+    """
+    if not file_bytes:
+        logger.warning("Order level CSV: Empty or invalid file")
+        return []
+
+    try:
+        text = file_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = file_bytes.decode("latin-1")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        logger.warning("Order level CSV: Missing header row")
+        return []
+
+    headers = {_normalize_header(name): name for name in reader.fieldnames if name}
+    required = {"ordernumber", "orderstatus"}
+    if not required.issubset(headers.keys()):
+        logger.warning(f"Order level CSV: Missing required columns. Found: {sorted(headers.keys())}")
+        return []
+
+    STATUS_MAP = {"COMPLETED": "Perfect", "INCOMPLETE": "Short"}
+
+    rows = []
+    for raw_row in reader:
+        raw_order = (raw_row.get(headers["ordernumber"]) or "").strip()
+        raw_status = (raw_row.get(headers["orderstatus"]) or "").strip().upper()
+        missed_lpns = (raw_row.get(headers.get("missedlpns", ""), "") or "").strip()
+
+        if not raw_order or not raw_status:
+            continue
+
+        # Strip non-digit chars and extract original order (last 8 digits)
+        digits_only = "".join(c for c in raw_order if c.isdigit())
+        if len(digits_only) < 8:
+            logger.warning(f"Order level CSV: orderNumber too short: '{raw_order}'")
+            continue
+
+        original_order = digits_only[8:] if len(digits_only) > 8 else digits_only
+        shipment_id = digits_only[:8] if len(digits_only) > 8 else ""
+        mapped_status = STATUS_MAP.get(raw_status, raw_status)
+
+        # Parse pipe-delimited SSCC18 list
+        sscc18_list = [s.strip() for s in missed_lpns.split("|") if s.strip()] if missed_lpns else []
+
+        rows.append({
+            "order_number": original_order,
+            "order_status": mapped_status,
+            "kargo_order_number": digits_only,
+            "shipment_id": shipment_id,
+            "missed_lpns": sscc18_list,
+        })
+
+    logger.info(f"Parsed {len(rows)} rows from order_level CSV")
+    return rows
+
+
 def detect_and_parse(filename: str, file_bytes: bytes):
     """
     Auto-detect file type by filename and parse accordingly.
@@ -276,6 +342,8 @@ def detect_and_parse(filename: str, file_bytes: bytes):
     fname_lower = filename.lower()
     if "allorders" in fname_lower or "all_orders" in fname_lower:
         return "order_status", parse_all_orders_csv(file_bytes), []
+    elif "order_level" in fname_lower:
+        return "order_level", parse_order_level_csv(file_bytes), []
     elif "ms_kargo" in fname_lower or "kargo" in fname_lower:
         return "shipments", parse_ms_kargo(file_bytes), []
     elif fname_lower.endswith(".csv") and ("result" in fname_lower or "shipment" in fname_lower):
