@@ -10,7 +10,7 @@ services:
       POSTGRES_USER:     ${POSTGRES_USER:-baxter}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-baxter_secret_123}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /data/postgres:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     # Only accessible via localhost / SSH tunnel (not exposed to public)
     ports:
@@ -35,7 +35,7 @@ services:
       GF_INSTALL_PLUGINS:         ""
       POSTGRES_PASSWORD:           ${POSTGRES_PASSWORD:-baxter_secret_123}
     volumes:
-      - grafana_data:/var/lib/grafana
+      - /data/grafana:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
@@ -69,6 +69,4 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-volumes:
-  postgres_data:
-  grafana_data:
+volumes: {}

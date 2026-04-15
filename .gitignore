@@ -30,3 +30,6 @@ desktop.ini
 # ---- Data ----
 sample_data/*.xlsx
 *.xlsx
+
+baxter.env
+ebs_setup.sh
