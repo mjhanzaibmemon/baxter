@@ -212,6 +212,25 @@ GF_RUNNING=$(docker inspect --format='{{.State.Running}}' baxter_grafana 2>/dev/
 [[ "$GF_RUNNING" == "true" ]] && success "Grafana:    running" \
   || warn "Grafana not running — check: docker logs baxter_grafana"
 
+# ── 8. Auto-ingest sample data ────────────────────────────────────────────────
+SAMPLE_DIR="$INSTALL_DIR/sample_data"
+if [[ -d "$SAMPLE_DIR" ]]; then
+  DATA_FILES=("$SAMPLE_DIR"/*)
+  if [[ ${#DATA_FILES[@]} -gt 0 && -e "${DATA_FILES[0]}" ]]; then
+    info "Auto-ingesting sample data files..."
+    for f in "$SAMPLE_DIR"/*.{xlsx,csv,XLSX,CSV}; do
+      [[ -f "$f" ]] || continue
+      fname=$(basename "$f")
+      info "  Ingesting: $fname"
+      docker exec baxter_ingestor python manual_upload.py "/app/sample_data/$fname" \
+        && success "  Done: $fname" \
+        || warn "  Failed: $fname — check: docker logs baxter_ingestor"
+    done
+  else
+    info "No sample data files found in $SAMPLE_DIR — skipping auto-ingest"
+  fi
+fi
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 SERVER_IP=$(hostname -I | awk '{print $1}')
 echo ""
