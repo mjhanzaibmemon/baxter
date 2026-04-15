@@ -214,21 +214,27 @@ GF_RUNNING=$(docker inspect --format='{{.State.Running}}' baxter_grafana 2>/dev/
 
 # ── 8. Auto-ingest sample data ────────────────────────────────────────────────
 SAMPLE_DIR="$INSTALL_DIR/sample_data"
-if [[ -d "$SAMPLE_DIR" ]]; then
-  DATA_FILES=("$SAMPLE_DIR"/*)
-  if [[ ${#DATA_FILES[@]} -gt 0 && -e "${DATA_FILES[0]}" ]]; then
-    info "Auto-ingesting sample data files..."
-    for f in "$SAMPLE_DIR"/*.{xlsx,csv,XLSX,CSV}; do
-      [[ -f "$f" ]] || continue
-      fname=$(basename "$f")
-      info "  Ingesting: $fname"
-      docker exec baxter_ingestor python manual_upload.py "/app/sample_data/$fname" \
-        && success "  Done: $fname" \
-        || warn "  Failed: $fname — check: docker logs baxter_ingestor"
-    done
+info "Auto-ingesting sample data files from $SAMPLE_DIR..."
+INGEST_COUNT=0
+INGEST_FAIL=0
+
+# Use find to handle filenames with spaces safely
+while IFS= read -r -d '' f; do
+  fname=$(basename "$f")
+  info "  Ingesting: $fname"
+  if docker exec baxter_ingestor python manual_upload.py "/app/sample_data/$fname"; then
+    success "  Done: $fname"
+    (( INGEST_COUNT++ )) || true
   else
-    info "No sample data files found in $SAMPLE_DIR — skipping auto-ingest"
+    warn "  Failed: $fname"
+    (( INGEST_FAIL++ )) || true
   fi
+done < <(find "$SAMPLE_DIR" -maxdepth 1 \( -iname "*.xlsx" -o -iname "*.csv" \) -print0 2>/dev/null)
+
+if (( INGEST_COUNT == 0 && INGEST_FAIL == 0 )); then
+  info "No data files found in $SAMPLE_DIR — skipping auto-ingest"
+else
+  success "Auto-ingest complete: $INGEST_COUNT succeeded, $INGEST_FAIL failed"
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
