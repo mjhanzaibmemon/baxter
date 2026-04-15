@@ -28,8 +28,7 @@ Thumbs.db
 desktop.ini
 
 # ---- Data ----
-sample_data/*.xlsx
-*.xlsx
+# xlsx files in sample_data are intentionally tracked for auto-ingest on setup
 
 baxter.env
 ebs_setup.sh
