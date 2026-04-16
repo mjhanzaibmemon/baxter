@@ -1,0 +1,182 @@
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    BAXTER DEPLOYMENT — QUICK REFERENCE CARD                  │
+│                         Print and Keep Handy During Setup                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 1: PREPARE CREDENTIALS (Off-instance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+☐ Complete Azure AD Setup (see docs/AZURE_SETUP_GUIDE.html)
+  ☐ Get GRAPH_TENANT_ID (Entra ID > Properties > Tenant ID)
+  ☐ Get GRAPH_CLIENT_ID (App Registrations > Your App > Application ID)
+  ☐ Get GRAPH_CLIENT_SECRET (App > Certificates & secrets > Client secrets)
+  ☐ Determine MAILBOX_EMAIL (email receiving Excel files)
+  ☐ List ALLOWED_SENDERS (comma-separated: email1,email2,email3)
+
+☐ Edit baxter.env:
+  Replace all [PLACEHOLDER] values:
+  ┌─────────────────────────────────────────────┐
+  │ GRAPH_TENANT_ID="[YOUR_TENANT_ID]"         │
+  │ GRAPH_CLIENT_ID="[YOUR_CLIENT_ID]"         │
+  │ GRAPH_CLIENT_SECRET="[YOUR_CLIENT_SECRET]" │
+  │ MAILBOX_EMAIL="[YOUR_EMAIL]"               │
+  │ ALLOWED_SENDERS="[EMAIL1,EMAIL2,EMAIL3]"   │
+  └─────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 2: PROVISION EC2 INSTANCE (AWS Console)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+☐ Launch EC2 Instance:
+  ┌─────────────────────────────────────────────┐
+  │ OS: Ubuntu 24.04 or 22.04 LTS               │
+  │ Instance Type: t3.micro (minimum)           │
+  │ Root Volume: 20 GB (gp3)                    │
+  │ Region: Choose your preferred region        │
+  │ Availability Zone: [WRITE DOWN: ________]   │
+  └─────────────────────────────────────────────┘
+
+☐ Attach EBS Volume:
+  ┌─────────────────────────────────────────────┐
+  │ Size: 10 GB                                 │
+  │ Type: gp3 (general purpose)                 │
+  │ Availability Zone: [SAME AS INSTANCE]       │
+  │ ⚠️ Do NOT format — script will do this      │
+  └─────────────────────────────────────────────┘
+
+☐ Enable SSH:
+  Security Group > Inbound Rules > Add:
+  ┌─────────────────────────────────────────────┐
+  │ Protocol: SSH (TCP 22)                      │
+  │ Source: Your IP or 0.0.0.0/0 (if internal) │
+  └─────────────────────────────────────────────┘
+
+Instance IP/Hostname: ______________________________________
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 3: COPY FILES TO INSTANCE (Local Machine)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run on your LOCAL machine (Windows PowerShell or Mac/Linux Terminal):
+
+Windows PowerShell:
+  ┌────────────────────────────────────────────────────────┐
+  │ $IP="ec2-XXX-XXX-XXX.us-east-2.compute.amazonaws.com" │
+  │ $KEY="$env:USERPROFILE\Downloads\rdp.pem"             │
+  │ $LOCAL="C:\Users\YourName\Desktop\baxter-deploy"      │
+  │ scp -i $KEY -o StrictHostKeyChecking=no `              │
+  │     $LOCAL\setup_baxter.sh `                           │
+  │     $LOCAL\baxter.env `                                │
+  │     ubuntu@${IP}:/home/ubuntu/                         │
+  └────────────────────────────────────────────────────────┘
+
+Mac/Linux:
+  ┌────────────────────────────────────────────────────────┐
+  │ IP="ec2-XXX-XXX-XXX.us-east-2.compute.amazonaws.com"  │
+  │ KEY="$HOME/.ssh/rdp.pem"                               │
+  │ LOCAL="$HOME/Desktop/baxter-deploy"                    │
+  │ scp -i $KEY -o StrictHostKeyChecking=no \              │
+  │     $LOCAL/setup_baxter.sh \                           │
+  │     $LOCAL/baxter.env \                                │
+  │     ubuntu@${IP}:/home/ubuntu/                         │
+  └────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 4: RUN DEPLOYMENT SCRIPT (On EC2 Instance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SSH into instance:
+  ┌────────────────────────────────────────────────────────┐
+  │ ssh -i /path/to/rdp.pem ubuntu@<YOUR_INSTANCE_IP>    │
+  └────────────────────────────────────────────────────────┘
+
+Run setup script:
+  ┌────────────────────────────────────────────────────────┐
+  │ cd ~                                                   │
+  │ chmod +x setup_baxter.sh                              │
+  │ sudo ./setup_baxter.sh 2>&1 | tee setup.log          │
+  └────────────────────────────────────────────────────────┘
+
+⏱️  Wait 5–10 minutes for completion
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 5: VERIFY DEPLOYMENT (After Script Completes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Check Docker containers:
+  ┌────────────────────────────────────────────────────────┐
+  │ docker ps                                              │
+  │                                                        │
+  │ Should show 3 containers: ✅ postgres, grafana, inges │
+  │                           All should say "(healthy)"    │
+  └────────────────────────────────────────────────────────┘
+
+✓ Access Grafana:
+  Open browser → http://<YOUR_INSTANCE_IP>:3000
+  
+  Login:
+  ┌────────────────────────────────────────────────────────┐
+  │ Username: admin                                        │
+  │ Password: admin123                                     │
+  └────────────────────────────────────────────────────────┘
+
+✓ Verify data in dashboards:
+  ┌────────────────────────────────────────────────────────┐
+  │ Orders Shipped:        6,077+                          │
+  │ Claims Submitted:      1,859+                          │
+  │ Verified Shortages:    63+                             │
+  │ $ Saved:               $123,904+                       │
+  └────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: "docker: command not found"
+→ Docker didn't install. Check internet, re-run sudo ./setup_baxter.sh
+
+Problem: EBS volume not detected
+→ Must attach 10GB EBS in AWS console (same AZ). Script won't auto-create disk.
+
+Problem: Grafana shows "Database error"
+→ Wait 30 sec, refresh page. Or: sudo docker logs baxter_postgres
+
+Problem: Script times out
+→ Services booting slow. Wait 2 min, refresh Grafana. Check: docker ps
+
+Problem: Email not ingesting
+→ Verify Graph credentials in baxter.env. Check Azure AD admin consent (✅ needed).
+
+See setup.log for details: cat setup.log
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GOING FORWARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+New data files:
+  Option A: Email Excel/CSV to MAILBOX_EMAIL → Auto-ingested
+  Option B: SSH in → docker exec baxter_ingestor python manual_upload.py FILE
+
+Restart services:
+  sudo docker compose -f /opt/baxter/docker-compose.yml restart
+
+Check logs:
+  sudo docker compose -f /opt/baxter/docker-compose.yml logs -f ingestor
+
+Backup database:
+  sudo docker exec baxter_postgres pg_dump -U baxter baxter_demo > backup.sql
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SUPPORT CONTACTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For issues: Share setup.log output + specific error message
+
+AWS: https://console.aws.amazon.com (manage EC2/EBS)
+Azure: https://portal.azure.com (Graph API credentials, admin consent)
+Docker: https://docs.docker.com (service management)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                   ✅ DEPLOYMENT READY — FOLLOW STEPS 1–5                    │
+└──────────────────────────────────────────────────────────────────────────────┘
